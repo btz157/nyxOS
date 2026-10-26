@@ -6,4 +6,7 @@ Components.Slider = require(script.Slider)
 Components.Dropdown = require(script.Dropdown)
 Components.Textbox = require(script.Textbox)
 Components.Label = require(script.Label)
+Components.Section = require(script.Section)
+Components.Divider = require(script.Divider)
+Components.ProgressBar = require(script.ProgressBar)
 return Components
