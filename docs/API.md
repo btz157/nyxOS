@@ -61,9 +61,19 @@ tab:AddTextbox({
 })
 
 tab:AddLabel({Name = "Status ready", Color = Color3.new(1, 1, 1)})
+tab:AddSection({Name = "System"})
+tab:AddDivider()
+local progress = tab:AddProgressBar({Name = "Loading", Min = 0, Max = 100, Default = 35})
+progress:Set(70)
 ```
 
 Controls return their Roblox instance or a small controller table depending on the control. Toggle, slider, dropdown and textbox controller tables expose a current value getter; check the source module for the exact return shape.
+
+## Extra components
+
+- `tab:AddSection({Name, Color, TextSize, Height})` adds a section heading and rule.
+- `tab:AddDivider({Color, Height, Transparency})` adds a horizontal divider.
+- `tab:AddProgressBar({Name, Min, Max, Default, Color, Callback})` creates an animated progress bar and returns a controller with `Get()` and `Set(value)`.
 
 ## Window methods
 
