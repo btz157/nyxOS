@@ -12,7 +12,7 @@
 - Tabs with separate scrollable pages.
 - Minimize button that creates a floating restore orb.
 - Toast notifications with timed dismissal.
-- Button, toggle, slider, dropdown, textbox and label controls.
+- Button, toggle, slider, dropdown, textbox, label, section, divider and progress controls.
 - Callback error handling for most component callbacks.
 - Modular Luau source and a Rojo project configuration.
 
@@ -31,6 +31,9 @@ src/
     Dropdown.lua
     Textbox.lua
     Label.lua
+    Section.lua
+    Divider.lua
+    ProgressBar.lua
 examples/
   basic.client.lua
 docs/
