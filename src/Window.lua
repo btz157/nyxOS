@@ -215,9 +215,10 @@ function Window:CreateTab(options)
     tab.AddToggle = function(_,opts) return Components.Toggle.Create(page,self.Theme,opts) end
     tab.AddSlider = function(_,opts) return Components.Slider.Create(page,self.Theme,opts) end
     tab.AddTextbox = function(_,opts) return Components.Textbox.Create(page,self.Theme,opts) end
-    tab.AddDropdown = function(_,opts)
-        return Components.Dropdown.Create(page,self.Theme,opts)
-    end
+    tab.AddDropdown = function(_,opts) return Components.Dropdown.Create(page,self.Theme,opts) end
+    tab.AddSection = function(_,opts) return Components.Section.Create(page,self.Theme,opts) end
+    tab.AddDivider = function(_,opts) return Components.Divider.Create(page,self.Theme,opts) end
+    tab.AddProgressBar = function(_,opts) return Components.ProgressBar.Create(page,self.Theme,opts) end
     table.insert(self._tabs,tab)
     if #self._tabs==1 then select() end
     return tab
