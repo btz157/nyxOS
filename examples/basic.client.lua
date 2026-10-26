@@ -10,6 +10,7 @@ local window = NyxOS:CreateWindow({
 
 local main = window:CreateTab({Name = "Dashboard", Icon = "◆"})
 main:AddLabel({Name = "SYSTEM ONLINE  •  NyxOS " .. NyxOS.Version, Color = Color3.fromRGB(0,255,120)})
+main:AddSection({Name = "Quick controls"})
 main:AddButton({
     Name = "Run diagnostic",
     Callback = function()
@@ -28,6 +29,10 @@ end})
 main:AddTextbox({Name = "Session label", Placeholder = "Enter a label", Callback = function(value)
     print("Session label:", value)
 end})
+
+local progress = main:AddProgressBar({Name = "Example progress", Min = 0, Max = 100, Default = 35})
+main:AddButton({Name = "Advance progress", Callback = function() progress:Set(math.min(progress:Get() + 10, 100)) end})
+main:AddDivider()
 
 local about = window:CreateTab({Name = "About", Icon = "ⓘ"})
 about:AddLabel({Name = "NyxOS is a modular Luau UI library."})
