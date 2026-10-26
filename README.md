@@ -1,110 +1,88 @@
 # NyxOS
 
-**A modular, animated Roblox Luau UI library** with a Matrix-inspired default theme, alternate palettes, reusable controls, draggable windows, tabs, notifications and a minimize/restore orb.
+**Biblioteca de interface Luau para Roblox**, com distribuição em arquivo único para ambientes que suportem execução de Luau e carregamento HTTP. A edição single-file foi preparada para testes fora do fluxo tradicional do Studio, mas compatibilidade com executores específicos **não é garantida nem foi validada em execução real**.
 
-> Current version: **0.2.0-dev — early development**. The single-file runtime and remote loader are now present. They have not been verified in a live executor, so treat this as an initial test build, not a stable release.
+> **Versão atual: 0.2.0-dev — build experimental.** Use primeiro o script de teste e reporte erros. Ainda não é uma release estável.
 
-## Features
+## Comece aqui — sem Rojo
 
-- Matrix, Neon, Dark and Light color palettes.
-- Animated window entrance and hover states.
-- Draggable top bar (mouse and touch input).
-- Tabs with separate scrollable pages.
-- Minimize button that creates a floating restore orb.
-- Toast notifications with timed dismissal.
-- Button, toggle, slider, dropdown, textbox, label, section, divider and progress controls.
-- Callback error handling for most component callbacks.
-- Modular Luau source and a Rojo project configuration.
+Se você quer apenas testar a interface em um ambiente compatível com Luau, use a distribuição de arquivo único. **Não precisa instalar Rojo nem abrir Roblox Studio para seguir este caminho.**
 
-## Project layout
-
-```text
-src/
-  init.lua
-  Themes.lua
-  Window.lua
-  Components/
-    init.lua
-    Button.lua
-    Toggle.lua
-    Slider.lua
-    Dropdown.lua
-    Textbox.lua
-    Label.lua
-    Section.lua
-    Divider.lua
-    ProgressBar.lua
-examples/
-  basic.client.lua
-docs/
-  API.md
-dist/
-  README.md
-default.project.json
-LICENSE
-```
-
-## Quick executor test\n\nThe standalone bundle is at [`dist/NyxOS.lua`](dist/NyxOS.lua). A minimal remote loader is available at [`loader.lua`](loader.lua). In an environment that supports `loadstring` and `game:HttpGet`, you can load the library with:\n\n```lua\nlocal NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/dist/NyxOS.lua"))()\n\nlocal window = NyxOS:CreateWindow({Title = "NYXOS // TEST", Theme = "Matrix"})\nlocal tab = window:CreateTab({Name = "Main", Icon = "◆"})\ntab:AddButton({Name = "Test notification", Callback = function()\n    window:Notify({Title = "NyxOS", Description = "The callback works!"})\nend})\n```\n\nSome environments disable remote compilation or HTTP access. In that case, do not attempt to bypass platform protections; use the bundled source where permitted.\n\n## Installation with Rojo
-
-1. Install [Rojo](https://rojo.space/) on your development computer.
-2. Clone or download this repository.
-3. Open the folder in a terminal and run `rojo build -o NyxOS.rbxm`.
-4. Import `NyxOS.rbxm` into Roblox Studio, or connect Rojo to a Studio test place.
-5. Place the NyxOS ModuleScript somewhere accessible to a LocalScript.
-6. Adapt `examples/basic.client.lua` to your place and test in **Play** mode.
-
-The included project mapping is a starting point; check the resulting Roblox instance hierarchy before requiring the module.
-
-## Quick start
-
-```lua
-local NyxOS = require(path.to.NyxOS)
+### Opção A — carregar pelo URL
+~~~lua
+local NyxOS = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/btz157/nyxOS/main/dist/NyxOS.lua"
+))()
 
 local window = NyxOS:CreateWindow({
-    Title = "NYXOS // CONTROL CENTER",
+    Title = "NYXOS // TEST",
     Theme = "Matrix",
-    Size = UDim2.fromOffset(700, 460),
-    ToggleKey = Enum.KeyCode.RightControl,
+    Size = UDim2.fromOffset(680, 440),
+    ToggleKey = Enum.KeyCode.RightControl
 })
 
-local tab = window:CreateTab({Name = "Dashboard", Icon = "◆"})
+local tab = window:CreateTab({Name = "Principal", Icon = "◆"})
 tab:AddButton({
-    Name = "Run",
+    Name = "Testar notificação",
     Callback = function()
         window:Notify({
             Title = "NyxOS",
-            Description = "Callback executed.",
-            Duration = 3,
+            Description = "Callback executado!"
         })
-    end,
+    end
 })
-tab:AddToggle({Name = "Enabled", Default = true, Callback = function(value)
-    print(value)
-end})
-tab:AddSlider({Name = "Intensity", Min = 0, Max = 100, Default = 50, Callback = function(value)
-    print(value)
-end})
-tab:AddDropdown({Name = "Mode", Options = {"A", "B", "C"}, Default = "A", Callback = function(value)
-    print(value)
-end})
-tab:AddTextbox({Name = "Name", Placeholder = "Type here", Callback = function(value)
-    print(value)
-end})
-tab:AddLabel({Name = "Ready"})
-```
+tab:AddToggle({
+    Name = "Teste de toggle",
+    Default = true,
+    Callback = function(value)
+        print("Toggle:", value)
+    end
+})
+~~~
 
-## API and callbacks
+### Opção B — loader curto
+O arquivo [loader.lua](loader.lua) baixa o bundle acima e mostra erros de carregamento mais claros. Abra-o para copiar o conteúdo ou use o URL raw do arquivo se o seu ambiente permitir.
 
-Read [docs/API.md](docs/API.md) for the current API notes and planned behavior. Component methods generally accept an options table with `Name`, optional initial values and `Callback`.
+- [Bundle single-file](dist/NyxOS.lua)
+- [Loader](loader.lua)
+- [Script de teste / exemplo](examples/basic.client.lua)
 
-## Important notes
+**Aviso:** loadstring e game:HttpGet podem estar indisponíveis em determinados ambientes. Não tente contornar proteções da plataforma; nesse caso, use a instalação de desenvolvimento abaixo.
 
-- This library is intended for Roblox experiences you own or are authorized to develop. Use Roblox Studio and the official Luau runtime.
-- It is not a guarantee of exploit-executor compatibility.
-- Test touch behavior, resize behavior, callbacks and cleanup in Studio before production use.
-- Version 0.1.0 is an early implementation. See the repository issues for bugs and planned work.
-- Do not put passwords, API keys or other secrets in the source code.
+## Instalação de desenvolvimento no Roblox Studio (opcional)
 
-## License
+Esta opção é somente para quem deseja trabalhar na versão modular dentro do Studio. Rojo é uma ferramenta de sincronização de arquivos com o Roblox Studio, não um requisito para carregar o bundle single-file. Consulte a [documentação oficial do Rojo](https://rojo.space/) apenas se quiser esse fluxo.
 
-MIT. See [LICENSE](LICENSE).
+1. Baixe ou clone este repositório.
+2. Configure o Rojo em seu computador de desenvolvimento.
+3. Execute o comando de build do Rojo e revise a hierarquia gerada.
+4. Importe o modelo no Studio e teste em uma experiência própria/autorizada.
+
+## Recursos
+
+- Temas Matrix, Neon, Dark e Light.
+- Janela com animação de entrada e barra superior arrastável.
+- Abas e páginas com rolagem.
+- Minimizar e restaurar pela bolinha flutuante.
+- Notificações.
+- Button, Toggle, Slider, Dropdown, Textbox, Label, Section, Divider e ProgressBar.
+- Tratamento de erros em callbacks.
+
+## Estrutura
+
+- src/: implementação modular para desenvolvimento.
+- dist/NyxOS.lua: runtime single-file para teste.
+- loader.lua: carregador remoto do runtime.
+- examples/: exemplos.
+- docs/API.md: referência da API.
+
+## Limitações conhecidas
+
+- Build experimental; ainda não testado ao vivo no Delta ou em outros executores.
+- A API modular e o bundle podem divergir; reporte problemas com o componente e o erro do console.
+- Nem todos os ambientes oferecem as mesmas APIs ou permitem carregar código remoto.
+- O projeto destina-se a interfaces e experiências Roblox próprias ou autorizadas; não inclui lógica de exploração de jogos.
+
+## Licença
+
+MIT. Consulte [LICENSE](LICENSE).
