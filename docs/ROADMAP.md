@@ -7,6 +7,7 @@
 - [x] Minimize/restore orb
 - [x] Timed toast notifications
 - [x] Button, toggle, slider, dropdown, textbox and label modules
+- [x] Section headings, dividers and progress bar
 - [x] Starter example and API notes
 
 ## Next engineering tasks
@@ -20,7 +21,7 @@
 - [ ] Add window resize support and responsive layouts
 - [ ] Add theme switching at runtime
 - [ ] Add icon abstraction and accessibility labels
-- [ ] Add confirmation dialogs, keybind control, separators and section headers
+- [ ] Add confirmation dialogs and keybind control
 - [ ] Generate and test deterministic `dist/NyxOS.lua` bundle
 - [ ] Add release tags and changelog
 
