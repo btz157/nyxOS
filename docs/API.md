@@ -1,96 +1,102 @@
-# NyxOS API
+# NyxOS API — build experimental
 
-NyxOS is a modular Roblox Luau UI library. Current source modules include the window, tabs, notifications, themes and six basic controls. This is an early development snapshot and has not yet been validated in Roblox Studio.
+A distribuição dist/NyxOS.lua é um arquivo único e não depende de Rojo. Rojo é opcional e serve apenas para sincronizar o código modular com Roblox Studio.
 
-## Create a window
+> A compatibilidade com executores específicos não foi validada. As assinaturas abaixo refletem a API pretendida do bundle experimental; alguns componentes podem precisar de correções após teste.
 
-```lua
-local NyxOS = require(path.to.NyxOS)
+## Carregar o bundle
+~~~lua
+local NyxOS = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/btz157/nyxOS/main/dist/NyxOS.lua"
+))()
+~~~
 
+Esse método exige que o ambiente permita game:HttpGet e loadstring. Se não permitir, use a instalação modular no Studio ou abra o arquivo single-file e execute-o apenas em um ambiente permitido.
+
+## Criar janela
+~~~lua
 local window = NyxOS:CreateWindow({
-    Title = "NYXOS // CONTROL CENTER",
+    Title = "NYXOS // TEST",
     Theme = "Matrix", -- Matrix | Neon | Dark | Light
-    Size = UDim2.fromOffset(700, 460),
-    Position = UDim2.fromScale(0.5, 0.5), -- optional
-    ToggleKey = Enum.KeyCode.RightControl, -- optional
-    Parent = player.PlayerGui, -- optional; defaults to LocalPlayer.PlayerGui
+    Size = UDim2.fromOffset(680, 440),
+    ToggleKey = Enum.KeyCode.RightControl
 })
-```
+~~~
 
-The module must be required from a client context (normally a LocalScript) because it uses PlayerGui and input services.
+## Abas e componentes
+~~~lua
+local tab = window:CreateTab({Name = "Principal", Icon = "◆"})
 
-## Tabs and controls
-
-```lua
-local tab = window:CreateTab({Name = "Dashboard", Icon = "◆"}) -- Icon is optional display text
+tab:AddSection({Name = "TESTES"})
+tab:AddLabel({Name = "Interface carregada"})
+tab:AddDivider()
 
 tab:AddButton({
-    Name = "Run",
+    Name = "Notificação",
     Callback = function()
-        window:Notify({Title = "NyxOS", Description = "Finished", Duration = 3})
-    end,
+        window:Notify({
+            Title = "NyxOS",
+            Description = "O callback funcionou!"
+        })
+    end
 })
 
-tab:AddToggle({
-    Name = "Enabled",
-    Default = false,
-    Callback = function(value) print(value) end,
+local toggle = tab:AddToggle({
+    Name = "Ativar opção",
+    Default = true,
+    Callback = function(value) print(value) end
 })
 
-tab:AddSlider({
-    Name = "Intensity",
+local slider = tab:AddSlider({
+    Name = "Intensidade",
     Min = 0,
     Max = 100,
     Default = 50,
-    Decimals = 0, -- optional
-    Callback = function(value) print(value) end,
+    Callback = function(value) print(value) end
 })
 
-tab:AddDropdown({
-    Name = "Mode",
-    Options = {"A", "B", "C"},
-    Default = "A",
-    Callback = function(value) print(value) end,
+local dropdown = tab:AddDropdown({
+    Name = "Modo",
+    Options = {"Matrix", "Neon", "Dark", "Light"},
+    Default = "Matrix",
+    Callback = function(value) print(value) end
 })
 
-tab:AddTextbox({
-    Name = "Label",
-    Placeholder = "Type here",
-    Default = "",
-    Callback = function(text, enterPressed) print(text, enterPressed) end,
+local textbox = tab:AddTextbox({
+    Name = "Texto",
+    Placeholder = "Digite aqui",
+    Callback = function(value, enterPressed)
+        print(value, enterPressed)
+    end
 })
 
-tab:AddLabel({Name = "Status ready", Color = Color3.new(1, 1, 1)})
-tab:AddSection({Name = "System"})
-tab:AddDivider()
-local progress = tab:AddProgressBar({Name = "Loading", Min = 0, Max = 100, Default = 35})
+local progress = tab:AddProgressBar({
+    Name = "Progresso",
+    Min = 0,
+    Max = 100,
+    Default = 35
+})
 progress:Set(70)
-```
+~~~
 
-Controls return their Roblox instance or a small controller table depending on the control. Toggle, slider, dropdown and textbox controller tables expose a current value getter; check the source module for the exact return shape.
+## Métodos da janela
 
-## Extra components
+- window:CreateTab({Name, Icon})
+- window:Notify({Title, Description, Content, Duration})
+- window:Destroy()
+- window:Close() — alias de Destroy()
 
-- `tab:AddSection({Name, Color, TextSize, Height})` adds a section heading and rule.
-- `tab:AddDivider({Color, Height, Transparency})` adds a horizontal divider.
-- `tab:AddProgressBar({Name, Min, Max, Default, Color, Callback})` creates an animated progress bar and returns a controller with `Get()` and `Set(value)`.
+## Temas
 
-## Window methods
+NyxOS:GetTheme(name) retorna a paleta do tema. Os temas disponíveis são Matrix, Neon, Dark e Light. A troca de tema durante a execução não está implementada no bundle atual; selecione o tema ao criar a janela.
 
-- `window:CreateTab(options)` creates and returns a tab.
-- `window:Notify({Title, Description, Content, Duration})` displays a toast.
-- `window:Destroy()` destroys the ScreenGui and registered window-level input connections.
-- `window:Close()` is an alias for `Destroy()`.
+## Rojo é opcional
 
-## Themes
+O fluxo Rojo serve para desenvolvimento da versão modular no Studio. Para testar o bundle single-file, pule a instalação do Rojo e use o trecho de carregamento no início deste documento.
 
-`NyxOS:GetTheme(name)` returns the named theme palette, defaulting to Matrix for unknown names. `NyxOS.Themes` exposes the theme module.
+## Limitações conhecidas
 
-## Limitations
-
-- No runtime theme-switching method yet.
-- No window resizing or persistence yet.
-- Long dropdown lists need additional scrolling support.
-- Component-level event connections and slider input connections need lifecycle review.
-- The single-file distribution has not been generated.
-- API and behavior are not yet Studio-validated; treat as early development.
+- Build experimental; não validado em execução real no Delta.
+- Ainda pode haver diferenças entre a API modular e o bundle.
+- Redimensionamento e persistência não estão implementados.
+- Algumas conexões de input e controles precisam de revisão de ciclo de vida.
