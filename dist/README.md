@@ -1,7 +1,27 @@
-# NyxOS distribution
+# NyxOS — distribuição single-file
 
-The bundled `NyxOS.lua` single-file build is **not generated yet**. The current source of truth is the modular implementation under `src/`.
+NyxOS.lua é a build experimental em arquivo único para ambientes que permitam executar Luau e carregar o arquivo. Ela não exige Rojo.
 
-Do not copy an empty or hand-truncated bundle and treat it as a release. Once the modular API is validated in Roblox Studio, create a deterministic bundling step and test that the bundled file exposes the same API as `src/init.lua`.
+## Teste rápido
 
-For now, install from source using the instructions in the repository README.
+~~~lua
+local NyxOS = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/btz157/nyxOS/main/dist/NyxOS.lua"
+))()
+
+local window = NyxOS:CreateWindow({
+    Title = "NYXOS // TEST",
+    Theme = "Matrix",
+    ToggleKey = Enum.KeyCode.RightControl
+})
+
+local tab = window:CreateTab({Name = "Principal"})
+tab:AddButton({
+    Name = "Testar",
+    Callback = function()
+        window:Notify({Title = "NyxOS", Description = "Funcionou!"})
+    end
+})
+~~~
+
+O carregamento remoto requer suporte a game:HttpGet e loadstring. O bundle ainda não foi validado ao vivo em executores específicos. Rojo é apenas para desenvolvimento opcional da versão modular no Studio.
