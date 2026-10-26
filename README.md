@@ -2,7 +2,7 @@
 
 **A modular, animated Roblox Luau UI library** with a Matrix-inspired default theme, alternate palettes, reusable controls, draggable windows, tabs, notifications and a minimize/restore orb.
 
-> Current version: **0.1.0 — early development**. The modular source is being assembled incrementally. It has not yet been fully validated in Roblox Studio, and the single-file distribution is not available yet.
+> Current version: **0.2.0-dev — early development**. The single-file runtime and remote loader are now present. They have not been verified in a live executor, so treat this as an initial test build, not a stable release.
 
 ## Features
 
@@ -44,7 +44,7 @@ default.project.json
 LICENSE
 ```
 
-## Installation with Rojo
+## Quick executor test\n\nThe standalone bundle is at [`dist/NyxOS.lua`](dist/NyxOS.lua). A minimal remote loader is available at [`loader.lua`](loader.lua). In an environment that supports `loadstring` and `game:HttpGet`, you can load the library with:\n\n```lua\nlocal NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/dist/NyxOS.lua"))()\n\nlocal window = NyxOS:CreateWindow({Title = "NYXOS // TEST", Theme = "Matrix"})\nlocal tab = window:CreateTab({Name = "Main", Icon = "◆"})\ntab:AddButton({Name = "Test notification", Callback = function()\n    window:Notify({Title = "NyxOS", Description = "The callback works!"})\nend})\n```\n\nSome environments disable remote compilation or HTTP access. In that case, do not attempt to bypass platform protections; use the bundled source where permitted.\n\n## Installation with Rojo
 
 1. Install [Rojo](https://rojo.space/) on your development computer.
 2. Clone or download this repository.
