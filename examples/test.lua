@@ -8,6 +8,7 @@ local nyx = NyxOS.new({
 		Game = { Name = "Meu Jogo", Version = "1.0.0", Desc = "Descrição do seu jogo aqui." },
 		Character = { Name = "Seu personagem", Class = "Guerreiro", Level = 12, Power = 340 },
 		Skins = {
+			{ Real = true, Name = "Meu avatar", Desc = "Seu personagem real, como está equipado no Roblox." },
 			{ Emoji = "🟢", Name = "Padrão", Desc = "Skin inicial." },
 			{ Emoji = "🔥", Name = "Neon", Desc = "Brilho verde neon nas bordas." },
 			{ Emoji = "🌑", Name = "Sombra", Desc = "Silhueta escura com rastro de dados." },

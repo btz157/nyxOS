@@ -727,7 +727,7 @@ return function(Tab, Window)
 
 	-- Emoji como foto (sem id): skin e avatar
 	local function isEmoji(s)
-		return type(s) == "string" and s ~= "" and not string.find(s, "rbxassetid", 1, true) and not tonumber(s)
+		return type(s) == "string" and s ~= "" and not string.find(s, "rbx", 1, true) and not tonumber(s)
 	end
 
 	local origCard2 = Window._buildCard
@@ -748,6 +748,11 @@ return function(Tab, Window)
 	local origSet = Window._setSkin
 	function Window:_setSkin(s)
 		origSet(self, s)
+		if s and s.Real then
+			self._skinImg.Image = "rbxthumb://type=AvatarBust&id=" .. tostring(game:GetService("Players").LocalPlayer.UserId) .. "&w=420&h=420"
+			self._skinImg.Visible = true
+			self._skinEmoji.Visible = false
+		end
 		if not self._skinEmoji or not s then
 			return
 		end

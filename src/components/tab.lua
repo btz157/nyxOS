@@ -22,7 +22,7 @@ local function assetUrl(id)
 	return tostring(id)
 end
 Tab.asset = assetUrl
-local function isEmoji(s) return type(s) == "string" and s ~= "" and not string.find(s, "rbxassetid", 1, true) and not tonumber(s) end
+local function isEmoji(s) return type(s) == "string" and s ~= "" and not string.find(s, "rbx", 1, true) and not tonumber(s) end
 
 -- icon (opcional): id de imagem mostrado ao lado do nome da aba
 function Tab.new(lib, name, desc, icon)
