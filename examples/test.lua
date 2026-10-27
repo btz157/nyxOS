@@ -1,13 +1,21 @@
 local NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/loader.lua"))()
 
 local nyx = NyxOS.new({
-	Title = "nyxOS TESTE",
+	Title = "nyxOS",
 	Size = Vector2.new(620, 410),
-	Theme = "neon",
 	Keybind = Enum.KeyCode.RightShift,
+	Home = {
+		Game = { Name = "Meu Jogo", Version = "1.0.0", Desc = "Descrição do seu jogo aqui." },
+		Character = { Name = "Seu personagem", Class = "Guerreiro", Level = 12, Power = 340 },
+		Skins = {
+			{ Name = "Padrão", Rarity = "Comum", Desc = "Skin inicial." },
+			{ Name = "Neon", Rarity = "Rara", Desc = "Brilho verde neon nas bordas." },
+			{ Name = "Sombra", Rarity = "Épica", Desc = "Silhueta escura com rastro de dados." },
+		},
+	},
 })
 
-local acoes = nyx:Tab("Ações", "botões e notificações")
+local acoes = nyx:Tab("Ações", "botões, notificações e console")
 acoes:Section("Notificações")
 acoes:Button("Sucesso", function()
 	nyx:Notify("operação concluída com sucesso", 3, "success")
@@ -24,8 +32,13 @@ end)
 acoes:Button("nyxOS", function()
 	nyx:Notify("bem-vindo ao núcleo nyxOS", 4, "nyx")
 end)
-acoes:Divider()
-acoes:Label("Clique nos botões para ver as notificações. RightShift ou o _ minimiza para a bolinha.")
+acoes:Section("Console")
+local log = acoes:Console(140)
+log("sistema iniciado")
+log("carregando módulos... ok")
+acoes:Button("Registrar evento", function()
+	log("evento disparado em " .. os.date("%H:%M:%S"))
+end)
 
 local opcoes = nyx:Tab("Opções", "ligue e desligue recursos")
 opcoes:Section("Jogador")
@@ -35,8 +48,8 @@ end)
 opcoes:Toggle("Voo", false, function(on)
 	nyx:Notify("voo " .. (on and "ligado" or "desligado"), 2, "info")
 end)
-opcoes:Toggle("ESP", true, function(on)
-	nyx:Notify("ESP " .. (on and "ligado" or "desligado"), 2, "info")
+opcoes:Keybind("Atalho", Enum.KeyCode.F, function()
+	nyx:Notify("tecla F pressionada", 2, "nyx")
 end)
 opcoes:Section("Perfil")
 opcoes:Textbox("Apelido", "digite e aperte Enter", function(txt, enter)
@@ -48,21 +61,18 @@ opcoes:Dropdown("Modo", { "Normal", "Rápido", "Silencioso" }, "Normal", functio
 	nyx:Notify("modo: " .. v, 2, "info")
 end)
 
-local config = nyx:Tab("Config", "ajustes e tema")
+local config = nyx:Tab("Config", "ajustes e status")
+config:Section("Status ao vivo")
+config:Stat("FPS", function()
+	return nyx:GetFPS()
+end)
 config:Section("Ajustes")
 config:Slider("Velocidade", 1, 10, 5, function(v)
 	print("velocidade:", v)
-end)
-config:Slider("Volume", 0, 100, 50, function(v)
-	print("volume:", v)
 end)
 local progSet = config:Progress("Carregamento", 0.2)
 local cur = 0.2
 config:Button("Avançar 10%", function()
 	cur = math.min(1, cur + 0.1)
 	progSet(cur, true)
-end)
-config:Section("Tema")
-config:Dropdown("Tema", { "neon", "amber", "cyber", "ice", "blood" }, "neon", function(v)
-	nyx:SetTheme(v)
 end)

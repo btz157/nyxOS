@@ -12,10 +12,12 @@ function E.scramble(c)
 	c.lbl.Text = table.concat(rows, "\n")
 end
 
--- Chuva Matrix: colunas com cabeça brilhante e rastro esmaecido
-local RCOL = 16
-local RLH = 15
-local RTS = 13
+-- Chuva Matrix em duas camadas: fundo (pequena, lenta, esmaecida) e frente (maior, rápida, viva)
+local LAYERS = {
+	{ col = 12, lh = 11, size = 10, spd = { 35, 95 }, alpha = 0.7, len = { 8, 22 }, density = 0.9 },
+	{ col = 18, lh = 16, size = 15, spd = { 110, 240 }, alpha = 0.3, len = { 6, 14 }, density = 0.45 },
+}
+local HEAD = Color3.fromRGB(235, 255, 235)
 
 local function glyphs(n)
 	local t = {}
@@ -25,31 +27,34 @@ local function glyphs(n)
 	return table.concat(t, "\n")
 end
 
-local function newStream(parent, x, h, theme, anywhere)
-	local len = math.random(6, 18)
+local function newStream(parent, x, h, theme, L, anywhere)
+	local len = math.random(L.len[1], L.len[2])
 	local s = {
 		x = x,
 		len = len,
+		col = L.col,
+		lh = L.lh,
+		L = L,
 		y = anywhere and math.random(0, math.floor(h)) or -math.random(0, math.floor(h / 3)),
-		spd = math.random(70, 200),
+		spd = math.random(L.spd[1], L.spd[2]),
 	}
 	s.trail = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(RCOL, len * RLH),
+		Size = UDim2.fromOffset(L.col, len * L.lh),
 		Font = theme.Font,
-		TextSize = RTS,
+		TextSize = L.size,
 		TextColor3 = theme.Accent,
-		TextTransparency = 0.5,
+		TextTransparency = L.alpha,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Text = glyphs(len),
 	}, parent)
 	s.head = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(RCOL, RLH),
+		Size = UDim2.fromOffset(L.col, L.lh),
 		Font = theme.Font,
-		TextSize = RTS,
-		TextColor3 = Color3.fromRGB(230, 255, 230),
+		TextSize = L.size,
+		TextColor3 = HEAD,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Text = U.glyph(),
@@ -59,9 +64,11 @@ end
 
 function E.rain(parent, w, h, theme)
 	local streams = {}
-	for x = 0, math.ceil(w / RCOL) do
-		if math.random() < 0.85 then
-			streams[#streams + 1] = newStream(parent, x * RCOL, h, theme, true)
+	for _, L in ipairs(LAYERS) do
+		for x = 0, math.ceil(w / L.col) do
+			if math.random() < L.density then
+				streams[#streams + 1] = newStream(parent, x * L.col, h, theme, L, true)
+			end
 		end
 	end
 	return streams
@@ -71,11 +78,11 @@ function E.step(streams, h, dt, mul)
 	mul = mul or 1
 	for _, s in ipairs(streams) do
 		s.y += s.spd * mul * dt
-		if s.y - s.len * RLH > h then
+		if s.y - s.len * s.lh > h then
 			s.y = -math.random(0, math.floor(h / 3))
-			s.len = math.random(6, 18)
-			s.spd = math.random(70, 200)
-			s.trail.Size = UDim2.fromOffset(RCOL, s.len * RLH)
+			s.len = math.random(s.L.len[1], s.L.len[2])
+			s.spd = math.random(s.L.spd[1], s.L.spd[2])
+			s.trail.Size = UDim2.fromOffset(s.col, s.len * s.lh)
 			s.trail.Text = glyphs(s.len)
 		end
 		if math.random() < 0.03 then
@@ -84,7 +91,7 @@ function E.step(streams, h, dt, mul)
 		if math.random() < 0.3 then
 			s.head.Text = U.glyph()
 		end
-		s.trail.Position = UDim2.fromOffset(s.x, s.y - s.len * RLH)
+		s.trail.Position = UDim2.fromOffset(s.x, s.y - s.len * s.lh)
 		s.head.Position = UDim2.fromOffset(s.x, s.y)
 	end
 end
@@ -191,7 +198,7 @@ function E.sweep(parent, color)
 	end)
 end
 
--- Boot em tela cheia: logo, log digitando, barra de progresso e "acesso liberado" no centro
+-- Boot em tela cheia com botão SKIP
 local LOGO = [==[
  _   _ __   ____  ___  ____
 | \ | |\ \ / /\ \/ / _ \/ ___|
@@ -270,23 +277,69 @@ function E.boot(parent, theme, lines, finalText, onDone)
 		ZIndex = 53,
 	}, overlay)
 
+	-- Botão SKIP: pula direto para o fim
+	local skipped = false
+	local skip = U.make("TextButton", {
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -24, 1, -24),
+		Size = UDim2.fromOffset(120, 32),
+		BackgroundColor3 = theme.Black,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+		Font = theme.Font,
+		TextSize = 15,
+		TextColor3 = theme.Accent,
+		Text = "[ SKIP ]",
+		ZIndex = 54,
+	}, overlay)
+	U.stroke(skip, theme.Accent)
+	skip.MouseEnter:Connect(function()
+		skip.BackgroundColor3 = theme.Accent
+		skip.TextColor3 = theme.Black
+	end)
+	skip.MouseLeave:Connect(function()
+		skip.BackgroundColor3 = theme.Black
+		skip.TextColor3 = theme.Accent
+	end)
+	skip.MouseButton1Click:Connect(function()
+		if skipped then
+			return
+		end
+		skipped = true
+		log.Parent = nil -- corta a digitação em andamento
+	end)
+
 	task.spawn(function()
 		local acc = ""
 		local n = #lines
 		for idx, line in ipairs(lines) do
+			if skipped then
+				break
+			end
 			U.type(log, "[ OK ] " .. line, 0.03, acc)
+			if skipped then
+				break
+			end
 			acc ..= "[ OK ] " .. line .. "\n"
-			local frac = idx / (n + 1)
-			TweenService:Create(fill, TweenInfo.new(0.3), { Size = UDim2.fromScale(frac, 1) }):Play()
-			pct.Text = string.format("%d%%", math.floor(frac * 100))
+			TweenService:Create(fill, TweenInfo.new(0.3), { Size = UDim2.fromScale(idx / (n + 1), 1) }):Play()
+			pct.Text = string.format("%d%%", math.floor(idx / (n + 1) * 100))
 			task.wait(0.15)
 		end
-		TweenService:Create(fill, TweenInfo.new(0.4), { Size = UDim2.fromScale(1, 1) }):Play()
+
+		-- Fim (normal ou por SKIP)
+		local all = ""
+		for _, l in ipairs(lines) do
+			all ..= "[ OK ] " .. l .. "\n"
+		end
+		log.Parent = overlay
+		log.Text = all
+		skip.Visible = false
+		TweenService:Create(fill, TweenInfo.new(skipped and 0.1 or 0.4), { Size = UDim2.fromScale(1, 1) }):Play()
 		pct.Text = "100%"
-		task.wait(0.4)
+		task.wait(skipped and 0.05 or 0.4)
 		E.glitch(final, finalText, 3)
 		TweenService:Create(final, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
-		task.wait(1)
+		task.wait(skipped and 0.5 or 1)
 		local fade = TweenInfo.new(0.6)
 		TweenService:Create(overlay, fade, { BackgroundTransparency = 1 }):Play()
 		TweenService:Create(logo, fade, { TextTransparency = 1 }):Play()
@@ -329,6 +382,46 @@ function E.lock(label, final, speed)
 		end
 		if label.Parent and label:GetAttribute("lock") == id then
 			label.Text = final
+		end
+	end)
+end
+
+-- Efeito de TV ligando: as metades pretas recolhem para o centro e a linha some
+function E.powerOn(parent, theme, onDone)
+	local top = U.make("Frame", {
+		Position = UDim2.fromScale(0, 0),
+		Size = UDim2.new(1, 0, 0.5, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+		ZIndex = 60,
+	}, parent)
+	local bot = U.make("Frame", {
+		Position = UDim2.fromScale(0, 0.5),
+		Size = UDim2.new(1, 0, 0.5, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+		ZIndex = 60,
+	}, parent)
+	local line = U.make("Frame", {
+		Position = UDim2.new(0, 0, 0.5, -2),
+		Size = UDim2.new(1, 0, 0, 4),
+		BackgroundColor3 = theme.Accent,
+		BorderSizePixel = 0,
+		ZIndex = 61,
+	}, parent)
+	task.spawn(function()
+		task.wait(0.2)
+		local q = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+		TweenService:Create(top, q, { Position = UDim2.fromScale(0, 0.5), Size = UDim2.new(1, 0, 0, 0) }):Play()
+		TweenService:Create(bot, q, { Position = UDim2.fromScale(0, 0.5), Size = UDim2.new(1, 0, 0, 0) }):Play()
+		task.wait(0.4)
+		TweenService:Create(line, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+		task.wait(0.3)
+		top:Destroy()
+		bot:Destroy()
+		line:Destroy()
+		if onDone then
+			onDone()
 		end
 	end)
 end

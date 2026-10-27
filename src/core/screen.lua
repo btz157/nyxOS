@@ -102,7 +102,9 @@ function S:flash()
 end
 
 function S:boot(lines, finalText, onDone)
-	E.boot(self.Top, self.Theme, lines, finalText, onDone)
+	E.powerOn(self.Top, self.Theme, function()
+		E.boot(self.Top, self.Theme, lines, finalText, onDone)
+	end)
 end
 
 function S:destroy()

@@ -5,6 +5,7 @@ local Screen = req("src/core/screen")
 local Tab = req("src/components/tab")
 
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
 local Window = {}
@@ -26,7 +27,19 @@ local KINDS = {
 	nyx = { tag = "NYX", title = "NYXOS", color = Color3.fromRGB(0, 234, 255) },
 }
 
-local TOP, FOOT, SIDE_W, HEAD_H = 30, 22, 140, 44
+local DEFAULT_HOME = {
+	Game = { Name = "Nome do jogo", Version = "1.0.0", Desc = "Descrição curta do seu jogo. Edite em opts.Home." },
+	Character = { Name = "Seu personagem", Class = "Classe", Level = 1, Power = 100 },
+	Skins = {
+		{ Name = "Padrão", Rarity = "Comum", Desc = "Skin inicial do personagem." },
+		{ Name = "Neon", Rarity = "Rara", Desc = "Brilho verde neon nas bordas." },
+		{ Name = "Sombra", Rarity = "Épica", Desc = "Silhueta escura com rastro de dados." },
+	},
+}
+
+local TOP, FOOT, SIDE_W, HEAD_H = 30, 22, 146, 46
+local BUBBLE_POS = UDim2.fromOffset(12, 64)
+local BUBBLE_CENTER = { 37, 89 }
 
 local function loadTheme(name)
 	local ok, T = pcall(req, "src/themes/" .. (name or "neon"))
@@ -34,6 +47,29 @@ local function loadTheme(name)
 		return T
 	end
 	return req("src/themes/neon")
+end
+
+-- Cantoneiras nos quatro cantos do painel (estilo terminal)
+local function corners(parent, T)
+	for _, c in ipairs({ { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } }) do
+		local ax, ay = c[1], c[2]
+		local px = ax == 0 and 3 or -3
+		local py = ay == 0 and 3 or -3
+		U.paint(U.make("Frame", {
+			AnchorPoint = Vector2.new(ax, ay),
+			Position = UDim2.new(ax, px, ay, py),
+			Size = UDim2.fromOffset(14, 2),
+			BorderSizePixel = 0,
+			ZIndex = 7,
+		}, parent), "BackgroundColor3", "Accent")
+		U.paint(U.make("Frame", {
+			AnchorPoint = Vector2.new(ax, ay),
+			Position = UDim2.new(ax, px, ay, py),
+			Size = UDim2.fromOffset(2, 14),
+			BorderSizePixel = 0,
+			ZIndex = 7,
+		}, parent), "BackgroundColor3", "Accent")
+	end
 end
 
 function Window.new(opts)
@@ -50,13 +86,27 @@ function Window.new(opts)
 	self._toastN = 0
 	self.Visible = true
 
+	-- contador de FPS
+	do
+		local frames, last = 0, os.clock()
+		table.insert(self._conns, RunService.Heartbeat:Connect(function()
+			frames += 1
+			local now = os.clock()
+			if now - last >= 1 then
+				self._fps = frames / (now - last)
+				frames = 0
+				last = now
+			end
+		end))
+	end
+
 	local size = opts.Size or Vector2.new(620, 410)
 	local W, H = size.X, size.Y
 	self.Size = UDim2.fromOffset(W, H)
 	local cam = workspace.CurrentCamera or workspace:WaitForChild("CurrentCamera")
 	self.Center = UDim2.fromOffset(math.floor(cam.ViewportSize.X / 2 - W / 2), math.floor(cam.ViewportSize.Y / 2 - H / 2))
 
-	-- Painel preto com borda neon e moldura interna
+	-- Painel: preto, borda neon, moldura interna e cantoneiras
 	local win = U.paint(U.make("Frame", {
 		Name = "Window",
 		Size = UDim2.fromOffset(W, 2),
@@ -74,6 +124,7 @@ function Window.new(opts)
 		BorderSizePixel = 0,
 		ZIndex = 2,
 	}, win), T.Dim, 1), "Color", "Dim")
+	corners(win, T)
 	TweenService:Create(win, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		Size = self.Size,
 	}):Play()
@@ -95,18 +146,18 @@ function Window.new(opts)
 	for i, key in ipairs({ "Accent", "Dim", "Dim" }) do
 		local d = U.paint(U.make("Frame", {
 			Size = UDim2.fromOffset(8, 8),
-			Position = UDim2.fromOffset(10 + (i - 1) * 13, 11),
+			Position = UDim2.fromOffset(12 + (i - 1) * 13, 11),
 			BackgroundColor3 = T[key],
 			BorderSizePixel = 0,
 			ZIndex = 6,
 		}, bar), "BackgroundColor3", key)
 		U.make("UICorner", { CornerRadius = UDim.new(1, 0) }, d)
 	end
-	self._titleText = "> " .. (opts.Title or "nyxOS") .. " v" .. (Window.Version or "")
+	self._titleText = "[ " .. (opts.Title or "nyxOS") .. " ]  v" .. (Window.Version or "")
 	self._titleLbl = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(56, 0),
-		Size = UDim2.new(1, -110, 1, 0),
+		Position = UDim2.fromOffset(62, 0),
+		Size = UDim2.new(1, -120, 1, 0),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
@@ -147,29 +198,29 @@ function Window.new(opts)
 	end)
 	U.draggable(bar, win, nil, self._conns)
 
-	-- Corpo: abas à esquerda, cabeçalho e painel à direita
-	local bodyTop = TOP + 6
-	local bottomGap = FOOT + 6
+	-- Corpo: menu lateral, cabeçalho da página e painel
+	local bodyTop = TOP + 8
+	local bottomGap = FOOT + 8
 	self._side = U.paint(U.make("Frame", {
-		Position = UDim2.fromOffset(6, bodyTop),
+		Position = UDim2.fromOffset(8, bodyTop),
 		Size = UDim2.new(0, SIDE_W, 1, -(bodyTop + bottomGap)),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
 	}, win), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(self._side, T.Dim), "Color", "Dim")
 	U.make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, self._side)
-	U.pad(self._side, 4, 4, 6, 6)
+	U.pad(self._side, 4, 4, 8, 6)
 
-	local mainX = 6 + SIDE_W + 6
+	local mainX = 8 + SIDE_W + 8
 	local head = U.make("Frame", {
 		Position = UDim2.fromOffset(mainX, bodyTop),
-		Size = UDim2.new(1, -(mainX + 6), 0, HEAD_H),
+		Size = UDim2.new(1, -(mainX + 8), 0, HEAD_H),
 		BackgroundTransparency = 1,
 	}, win)
 	self._pageTitle = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(2, 2),
-		Size = UDim2.new(1, -4, 0, 22),
+		Position = UDim2.fromOffset(4, 4),
+		Size = UDim2.new(1, -8, 0, 22),
 		Font = T.Font,
 		TextSize = 18,
 		TextColor3 = T.Accent,
@@ -178,8 +229,8 @@ function Window.new(opts)
 	}, head), "TextColor3", "Accent")
 	self._pageDesc = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(2, 24),
-		Size = UDim2.new(1, -4, 0, 14),
+		Position = UDim2.fromOffset(4, 26),
+		Size = UDim2.new(1, -8, 0, 14),
 		Font = T.Font,
 		TextSize = 12,
 		TextColor3 = T.Dim,
@@ -187,7 +238,7 @@ function Window.new(opts)
 		Text = "",
 	}, head), "TextColor3", "Dim")
 	U.paint(U.make("Frame", {
-		Position = UDim2.new(0, 0, 1, -2),
+		Position = UDim2.new(0, 0, 1, -3),
 		Size = UDim2.new(1, 0, 0, 1),
 		BackgroundColor3 = T.Dim,
 		BorderSizePixel = 0,
@@ -195,21 +246,21 @@ function Window.new(opts)
 
 	self._main = U.paint(U.make("Frame", {
 		Position = UDim2.fromOffset(mainX, bodyTop + HEAD_H + 6),
-		Size = UDim2.new(1, -(mainX + 6), 1, -(bodyTop + HEAD_H + 6 + bottomGap)),
+		Size = UDim2.new(1, -(mainX + 8), 1, -(bodyTop + HEAD_H + 6 + bottomGap)),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	}, win), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(self._main, T.Dim), "Color", "Dim")
 
-	-- Rodapé com status e relógio
+	-- Rodapé: status, FPS e relógio
 	local foot = U.paint(U.make("Frame", {
 		Position = UDim2.new(0, 0, 1, -FOOT),
 		Size = UDim2.new(1, 0, 0, FOOT),
-		BackgroundColor3 = T.Panel,
+		BackgroundColor3 = T.Black,
 		BorderSizePixel = 0,
 		ZIndex = 5,
-	}, win), "BackgroundColor3", "Panel")
+	}, win), "BackgroundColor3", "Black")
 	U.paint(U.make("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		BackgroundColor3 = T.Dim,
@@ -218,7 +269,7 @@ function Window.new(opts)
 	local footL = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.fromOffset(8, 0),
-		Size = UDim2.new(1, -120, 1, 0),
+		Size = UDim2.new(1, -200, 1, 0),
 		Font = T.Font,
 		TextSize = 13,
 		TextColor3 = T.Accent,
@@ -228,8 +279,8 @@ function Window.new(opts)
 	}, foot), "TextColor3", "Accent")
 	local footR = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1, -116, 0, 0),
-		Size = UDim2.fromOffset(108, FOOT),
+		Position = UDim2.new(1, -196, 0, 0),
+		Size = UDim2.fromOffset(188, FOOT),
 		Font = T.Font,
 		TextSize = 13,
 		TextColor3 = T.Accent,
@@ -241,16 +292,16 @@ function Window.new(opts)
 	task.spawn(function()
 		while self.Gui.Parent do
 			pcall(function()
-				footR.Text = os.date("%H:%M:%S")
+				footR.Text = string.format("%s  %dfps", os.date("%H:%M:%S"), math.floor(self._fps or 0))
 			end)
-			task.wait(1)
+			task.wait(0.5)
 		end
 	end)
 
-	-- Bolinha (minimizado) no canto superior esquerdo com o nome nyx
+	-- Bolinha (minimizado), mais abaixo no canto superior esquerdo
 	self.Bubble = U.paint(U.make("Frame", {
 		Size = UDim2.fromOffset(50, 50),
-		Position = UDim2.fromOffset(12, 12),
+		Position = BUBBLE_POS,
 		BackgroundColor3 = T.Black,
 		Visible = false,
 		ZIndex = 30,
@@ -295,7 +346,7 @@ function Window.new(opts)
 		end
 	end)
 
-	-- "nyx" da bolinha revela letra por letra de tempos em tempos
+	-- Revelação do "nyx" na bolinha, de tempos em tempos
 	task.spawn(function()
 		while self.Gui.Parent do
 			task.wait(5)
@@ -319,7 +370,12 @@ function Window.new(opts)
 		end
 	end))
 
-	-- Boot em tela cheia, por cima da janela
+	-- Aba Início (jogo, personagem e skin)
+	if opts.Home ~= false then
+		self:_home(opts.Home or DEFAULT_HOME)
+	end
+
+	-- Boot em tela cheia, por cima da janela (com SKIP)
 	self.Screen:boot(BOOT_LINES, "ACESSO LIBERADO", function()
 		self.Screen:flash()
 		self.Screen:boost(4)
@@ -328,16 +384,55 @@ function Window.new(opts)
 	return self
 end
 
+function Window:GetFPS()
+	return math.floor(self._fps or 0)
+end
+
+-- Aba Início: informações do jogo, do personagem e escolha de skin
+function Window:_home(home)
+	local g = home.Game or DEFAULT_HOME.Game
+	local c = home.Character or DEFAULT_HOME.Character
+	local skins = home.Skins or DEFAULT_HOME.Skins
+	local tab = self:Tab("Início", "jogo, personagem e skin")
+
+	tab:Section("Jogo")
+	tab:Label(string.format("%s  v%s\n%s", g.Name, g.Version, g.Desc))
+
+	tab:Section("Personagem")
+	tab:Label(string.format("Nome: %s\nClasse: %s\nNível: %s\nPoder: %s", c.Name, c.Class, tostring(c.Level), tostring(c.Power)))
+
+	tab:Section("Skin")
+	local names = {}
+	for i, s in ipairs(skins) do
+		names[i] = s.Name
+	end
+	local skinInfo = tab:Label("")
+	local function show(name)
+		for _, s in ipairs(skins) do
+			if s.Name == name then
+				skinInfo.Text = string.format("Raridade: %s\n%s", s.Rarity, s.Desc)
+				return
+			end
+		end
+	end
+	tab:Dropdown("Skin", names, names[1], function(v)
+		show(v)
+		self:Notify("skin equipada: " .. v, 2, "nyx")
+	end)
+	show(names[1])
+	return tab
+end
+
 function Window:_select(t)
 	local T = self.Theme
 	for _, o in ipairs(self._tabs) do
 		local on = o == t
 		o.active = on
 		o.page.Visible = on
+		o.marker.Visible = on
 		o.btn.BackgroundTransparency = on and 0 or 1
-		o.btn.BackgroundColor3 = T.Accent
-		o.btn.TextColor3 = on and T.Black or T.Accent
-		o.btn.Text = (on and "> " or "  ") .. o.name
+		o.btn.BackgroundColor3 = T.Hover
+		o.btn.TextColor3 = on and T.Accent or T.Dim
 	end
 	if t then
 		t.page.Position = UDim2.fromOffset(24, 0)
@@ -350,9 +445,16 @@ function Window:_select(t)
 	self._active = t
 end
 
--- Cria uma aba (lateral esquerda)
+-- Cria uma aba (menu lateral esquerdo)
 function Window:Tab(name, desc)
 	local t = Tab.new(self, name, desc)
+	t.marker = U.paint(U.make("Frame", {
+		Position = UDim2.fromOffset(0, 4),
+		Size = UDim2.new(0, 3, 1, -8),
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 3,
+	}, t.btn), "BackgroundColor3", "Accent")
 	table.insert(self._tabs, t)
 	if not self._active then
 		self:_select(t)
@@ -360,7 +462,7 @@ function Window:Tab(name, desc)
 	return t
 end
 
--- Troca o tema ao vivo: pinta tudo de novo
+-- Troca o tema ao vivo
 function Window:SetTheme(name)
 	local T = loadTheme(name)
 	self.Theme = T
@@ -375,7 +477,6 @@ end
 
 -- Notificação no canto superior direito
 -- kind: "info" (padrão) | "success" | "warn" | "error" | "nyx"
--- title: opcional
 function Window:Notify(text, duration, kind, title)
 	local T = self.Theme
 	local k = KINDS[kind or "info"] or KINDS.info
@@ -449,9 +550,9 @@ function Window:Notify(text, duration, kind, title)
 	}, toast)
 
 	if kind == "nyx" or kind == "error" then
-		local cam = workspace.CurrentCamera
-		if cam then
-			self.Screen:burst(cam.ViewportSize.X - 200, 40, col, 16)
+		local cam2 = workspace.CurrentCamera
+		if cam2 then
+			self.Screen:burst(cam2.ViewportSize.X - 200, 40, col, 16)
 		end
 		self.Screen:flash()
 	end
@@ -509,7 +610,7 @@ function Window:Minimize()
 	self.Center = self.Window.Position
 	local t = TweenService:Create(self.Window, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Size = UDim2.fromOffset(0, 0),
-		Position = UDim2.fromOffset(37, 37),
+		Position = UDim2.fromOffset(BUBBLE_CENTER[1], BUBBLE_CENTER[2]),
 	})
 	t:Play()
 	t.Completed:Connect(function()
@@ -517,7 +618,7 @@ function Window:Minimize()
 			return
 		end
 		self.Window.Visible = false
-		self.Screen:setVisible(false) -- desliga chuva e scanline
+		self.Screen:setVisible(false)
 		self.Bubble.Visible = true
 		self.Bubble.Size = UDim2.fromOffset(0, 0)
 		TweenService:Create(self.Bubble, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -536,7 +637,7 @@ function Window:Restore()
 	self.Bubble.Visible = false
 	self.Window.Visible = true
 	self.Window.Size = UDim2.fromOffset(0, 0)
-	self.Screen:burst(37, 37, self.Theme.Accent, 14)
+	self.Screen:burst(BUBBLE_CENTER[1], BUBBLE_CENTER[2], self.Theme.Accent, 14)
 	self.Screen:boost(3)
 	self.Screen:flash()
 	TweenService:Create(self.Window, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -545,7 +646,6 @@ function Window:Restore()
 	}):Play()
 end
 
--- Fechar com animação de tela inteira
 function Window:Close()
 	if self._closing then
 		return

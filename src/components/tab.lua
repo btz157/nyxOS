@@ -432,4 +432,124 @@ function Tab:Progress(name, initial)
 	return set
 end
 
+-- Console estilo terminal: retorna log(texto), que digita cada linha
+function Tab:Console(height)
+	local T = self.lib.Theme
+	local frame = U.paint(U.make("Frame", {
+		Size = UDim2.new(1, 0, 0, height or 150),
+		BackgroundColor3 = T.Black,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+	}, self.page), "BackgroundColor3", "Black")
+	U.paint(U.stroke(frame, T.Dim), "Color", "Dim")
+	local out = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -16, 1, -12),
+		Position = UDim2.fromOffset(8, 6),
+		Font = T.Font,
+		TextSize = 13,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Bottom,
+		TextWrapped = true,
+		Text = "",
+	}, frame), "TextColor3", "Accent")
+	local buf, queue, busy = {}, {}, false
+	local function pump()
+		if busy then
+			return
+		end
+		busy = true
+		task.spawn(function()
+			while #queue > 0 do
+				local text = table.remove(queue, 1)
+				local idx = #buf + 1
+				buf[idx] = "> "
+				for _, ch in ipairs(U.chars(text)) do
+					if not out.Parent then
+						return
+					end
+					buf[idx] = buf[idx] .. ch
+					out.Text = table.concat(buf, "\n") .. "_"
+					task.wait(0.012)
+				end
+				buf[idx] = "> " .. text
+				while #buf > 14 do
+					table.remove(buf, 1)
+				end
+				out.Text = table.concat(buf, "\n")
+			end
+			busy = false
+		end)
+	end
+	return function(text)
+		queue[#queue + 1] = tostring(text)
+		pump()
+	end
+end
+
+-- [>] Nome   [ F ]  (clique e pressione a tecla; onPress roda ao apertar)
+function Tab:Keybind(name, default, onPress)
+	local T = self.lib.Theme
+	local key = default or Enum.KeyCode.F
+	local listening = false
+	local r = row(self, "[>] " .. name)
+	local val = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -20, 1, 0),
+		Font = T.Font,
+		TextSize = 15,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextColor3 = T.Accent,
+		Text = "[ " .. key.Name .. " ]",
+	}, r)
+	local function refresh()
+		local t = self.lib.Theme
+		val.TextColor3 = listening and t.Dim or t.Accent
+	end
+	table.insert(self.lib._refresh, refresh)
+	r.MouseButton1Click:Connect(function()
+		listening = true
+		val.Text = "[ ... ]"
+		refresh()
+	end)
+	table.insert(self.lib._conns, UIS.InputBegan:Connect(function(input, gp)
+		if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+			listening = false
+			key = input.KeyCode
+			val.Text = "[ " .. key.Name .. " ]"
+			refresh()
+			return
+		end
+		if not gp and input.KeyCode == key and onPress then
+			onPress()
+		end
+	end))
+	return function()
+		return key
+	end
+end
+
+-- Estatística ao vivo: atualiza a cada 0.5s chamando fn()
+function Tab:Stat(name, fn)
+	local T = self.lib.Theme
+	local lbl = U.paint(U.make("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 22),
+		BackgroundTransparency = 1,
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "",
+	}, self.page), "TextColor3", "Accent")
+	task.spawn(function()
+		while lbl.Parent do
+			local ok, v = pcall(fn)
+			lbl.Text = string.format("[>] %s: %s", name, ok and tostring(v) or "?")
+			task.wait(0.5)
+		end
+	end)
+	return lbl
+end
+
 return Tab
