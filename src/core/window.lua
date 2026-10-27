@@ -31,13 +31,13 @@ local DEFAULT_HOME = {
 	Game = { Name = "Nome do jogo", Version = "1.0.0", Desc = "Descrição curta do seu jogo. Edite em opts.Home." },
 	Character = { Name = "Seu personagem", Class = "Classe", Level = 1, Power = 100 },
 	Skins = {
-		{ Name = "Padrão", Rarity = "Comum", Desc = "Skin inicial do personagem." },
-		{ Name = "Neon", Rarity = "Rara", Desc = "Brilho verde neon nas bordas." },
-		{ Name = "Sombra", Rarity = "Épica", Desc = "Silhueta escura com rastro de dados." },
+		{ Name = "Padrão", Desc = "Skin inicial do personagem." },
+		{ Name = "Neon", Desc = "Brilho verde neon nas bordas." },
+		{ Name = "Sombra", Desc = "Silhueta escura com rastro de dados." },
 	},
 }
 
-local TOP, FOOT, SIDE_W, HEAD_H = 30, 22, 146, 46
+local TOP, FOOT, SIDE_W, HEAD_H = 30, 22, 184, 46
 local BUBBLE_POS = UDim2.fromOffset(12, 64)
 local BUBBLE_CENTER = { 37, 89 }
 
@@ -224,11 +224,15 @@ local bgf = U.make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C
 	-- Corpo: menu lateral, cabeçalho da página e painel
 	local bodyTop = TOP + 8
 	local bottomGap = FOOT + 8
-	self._side = U.paint(U.make("Frame", {
+	self._side = U.paint(U.make("ScrollingFrame", {
 		Position = UDim2.fromOffset(8, bodyTop),
 		Size = UDim2.new(0, SIDE_W, 1, -(bodyTop + bottomGap)),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
+		ScrollBarThickness = 2,
+		ScrollBarImageColor3 = T.Accent,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	}, win), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(self._side, T.Dim), "Color", "Dim")
 	U.make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, self._side)
@@ -540,7 +544,7 @@ function Window:_setSkin(s)
 	end
 	self._skinImg.Image = s.Image and Tab.asset(s.Image) or ""
 	self._skinName.Text = s.Name
-	self._skinInfo.Text = "Raridade: " .. tostring(s.Rarity) .. "\n" .. tostring(s.Desc)
+	self._skinInfo.Text = tostring(s.Desc)
 end
 
 -- Aba Início: jogo, personagem, skin (e cartão da skin no menu)
@@ -578,14 +582,14 @@ function Window:_home(home)
 	tab:Dropdown("Escolher skin", names, names[1], function(v)
 		local s = find(v)
 		self:_setSkin(s)
-		info.Text = "Raridade: " .. tostring(s.Rarity) .. "\n" .. tostring(s.Desc)
+		info.Text = tostring(s.Desc)
 		self:Notify("skin equipada: " .. v, 2, "nyx")
 	end)
 
 	self:_buildCard()
 	local first = skins[1]
 	self:_setSkin(first)
-	info.Text = "Raridade: " .. tostring(first.Rarity) .. "\n" .. tostring(first.Desc)
+	info.Text = tostring(first.Desc)
 	return tab
 end
 

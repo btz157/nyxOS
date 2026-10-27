@@ -26,7 +26,7 @@ Tab.asset = assetUrl
 -- icon (opcional): id de imagem mostrado ao lado do nome da aba
 function Tab.new(lib, name, desc, icon)
 	local T = lib.Theme
-	local prefix = icon and "         " or "  "
+	local prefix = icon and "      " or "  "
 	local btn = U.make("TextButton", {
 		Size = UDim2.new(1, 0, 0, 30),
 		BackgroundColor3 = T.Accent,
@@ -42,8 +42,8 @@ function Tab.new(lib, name, desc, icon)
 	if icon then
 		U.paint(U.make("ImageLabel", {
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(6, 7),
-			Size = UDim2.fromOffset(16, 16),
+			Position = UDim2.fromOffset(8, 6),
+			Size = UDim2.fromOffset(18, 18),
 			Image = assetUrl(icon),
 			ImageColor3 = T.Accent,
 			ZIndex = 2,
