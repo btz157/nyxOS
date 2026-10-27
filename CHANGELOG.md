@@ -1,9 +1,11 @@
 # Changelog
 
-## 0.1.0 — initial modular implementation
-- Added four theme palettes.
-- Added window, tab, notification and minimize/restore behavior.
-- Added button, toggle, slider, dropdown, textbox and label controls.
-- Added initial README, API notes, example, license and roadmap.
+## 1.2.0
+- Layout com abas à esquerda e painel à direita
+- Matrix só no fundo; painel preto com verde neon
+- Boot animado, notificações digitadas, toggle [_on_]
+- Código dividido em módulos (core, components, themes)
+- Repositório reorganizado
 
-This is an early development snapshot. Studio validation and a single-file build are still pending.
+## 1.1.0
+- Versão de testes
