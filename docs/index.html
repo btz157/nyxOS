@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nyxOS UI Library para Roblox (Luau) | Interface estilo Matrix e terminal</title>
+<meta name="description" content="nyxOS é uma biblioteca de interface em Luau para Roblox, com estilo hacker, terminal e Matrix. Abas, componentes, notificações, temas e configurações salvas. Versão beta, gratuita e open source.">
+<meta name="keywords" content="nyxOS, biblioteca UI Roblox, UI library Roblox, Luau UI library, interface Roblox, GUI Roblox, Roblox executor UI, UI Matrix, UI terminal, Luau">
+<meta name="author" content="btz157">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://btz157.github.io/nyxOS/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="nyxOS UI Library para Roblox (Luau)">
+<meta property="og:description" content="Biblioteca de interface em Luau com estilo hacker, Matrix e terminal. Abas, componentes e configurações salvas.">
+<meta property="og:url" content="https://btz157.github.io/nyxOS/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "nyxOS",
+  "description": "Biblioteca de interface em Luau para Roblox com estilo hacker, terminal e Matrix.",
+  "programmingLanguage": "Luau",
+  "codeRepository": "https://github.com/btz157/nyxOS",
+  "license": "https://github.com/btz157/nyxOS",
+  "version": "2.6.0-beta",
+  "author": { "@type": "Person", "name": "btz157" }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #000; color: #39ff14; font-family: "Courier New", Consolas, monospace; line-height: 1.6; }
+  header, main, footer { max-width: 920px; margin: 0 auto; padding: 24px 20px; }
+  h1 { font-size: 2rem; margin: 0 0 8px; text-shadow: 0 0 8px #39ff14; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid #1f6b12; padding-bottom: 6px; margin-top: 36px; }
+  .tag { display: inline-block; border: 1px solid #39ff14; padding: 2px 8px; margin-right: 6px; font-size: .8rem; }
+  .box { border: 1px solid #39ff14; padding: 14px; background: #021002; overflow-x: auto; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+  a { color: #7dff5c; }
+  ul { padding-left: 20px; }
+  .aviso { color: #ffbe00; }
+  footer { font-size: .85rem; opacity: .8; border-top: 1px solid #1f6b12; margin-top: 40px; }
+  .btn { display: inline-block; border: 1px solid #39ff14; padding: 8px 14px; margin: 6px 6px 0 0; text-decoration: none; color: #39ff14; }
+  .btn:hover { background: #39ff14; color: #000; }
+</style>
+</head>
+<body>
+<header>
+  <h1>nyxOS</h1>
+  <p>Biblioteca de interface em <strong>Luau</strong> para <strong>Roblox</strong>, com estilo <em>hacker, terminal e Matrix</em>.</p>
+  <span class="tag">BETA 2.6.0</span><span class="tag">Luau</span><span class="tag">Roblox UI</span><span class="tag">Open source</span>
+  <p class="aviso">Versão beta: pode ter erros e mudar sem aviso.</p>
+  <a class="btn" href="https://github.com/btz157/nyxOS">Código no GitHub</a>
+  <a class="btn" href="https://github.com/btz157/nyxOS/blob/main/dist/nyxOS-beta.lua">Baixar o arquivo único</a>
+</header>
+
+<main>
+  <h2>O que é</h2>
+  <p>A nyxOS é uma UI library para criar janelas, abas e controles em scripts de Roblox. Tudo com visual de terminal: texto que se decodifica, chuva Matrix no fundo, notificações digitadas e uma bolinha no canto quando a janela é minimizada.</p>
+
+  <h2>Recursos</h2>
+  <ul>
+    <li>Abas com ícones (emoji ou imagem), janela arrastável e minimizar para bolinha</li>
+    <li>Componentes: botões, toggles, sliders, dropdown, checklist, radio, caixa de texto, tecla de atalho, paleta de cores, tabela, gráfico de barrinhas, console, terminal e mais</li>
+    <li>Notificações com tipos: info, sucesso, aviso, erro e nyxOS</li>
+    <li>Configurações salvas automaticamente entre execuções</li>
+    <li>Animação de inicialização com opção de pular, e chuva Matrix que pode ser desligada</li>
+    <li>Erros dentro das funções aparecem como notificação, sem travar a interface</li>
+  </ul>
+
+  <h2>Como usar</h2>
+  <p>Cole este código no seu executor:</p>
+  <div class="box"><pre>local NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/dist/nyxOS-beta.lua"))()
+
+local nyx = NyxOS.new({ Title = "Meu script", Size = Vector2.new(720, 440) })
+
+local main = nyx:Tab("Início", "exemplo", "🏠")
+main:Section("Ações")
+main:Button("Olá", function()
+	nyx:Notify("olá!", 3, "success")
+end)</pre></div>
+
+  <h2>Documentação</h2>
+  <p>Opções, componentes e exemplos estão no <a href="https://github.com/btz157/nyxOS#readme">README do repositório</a>.</p>
+
+  <h2>Perguntas frequentes</h2>
+  <p><strong>A nyxOS é gratuita?</strong> Sim. O código é público e pode ser usado em testes e scripts pessoais.</p>
+  <p><strong>Funciona em qualquer executor?</strong> Depende do executor ter <code>game:HttpGet</code> e <code>loadstring</code>. Use o script de teste universal para checar.</p>
+  <p><strong>Por que é beta?</strong> A lib ainda está em testes. Erros são corrigidos a cada versão.</p>
+</main>
+
+<footer>
+  <p>nyxOS é um projeto independente, sem vínculo com a Roblox Corporation. Use com responsabilidade e de acordo com as regras de cada jogo e plataforma.</p>
+  <p>Criado por <a href="https://github.com/btz157">btz157</a>.</p>
+</footer>
+</body>
+</html>
