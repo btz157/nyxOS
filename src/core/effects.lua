@@ -154,61 +154,112 @@ function E.sweep(parent, color)
 	end)
 end
 
--- Boot em tela cheia: tela escurece e um console centralizado digita as linhas
+-- Boot em tela cheia: logo, log digitando, barra de progresso e "acesso liberado" no centro
+local LOGO = [==[
+ _   _ __   ____  ___  ____
+| \ | |\ \ / /\ \/ / _ \/ ___|
+|  \| | \ V /  \  / | | \___ \
+| |\  |  | |   /  \ |_| |___) |
+|_| \_|  |_|  /_/\_\___/|____/
+]==]
+
 function E.boot(parent, theme, lines, finalText, onDone)
 	local overlay = U.make("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = theme.Black,
-		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
 		ZIndex = 50,
 	}, parent)
-	local box = U.make("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(560, 300),
-		BackgroundColor3 = theme.Black,
-		BorderSizePixel = 0,
-		ClipsDescendants = true,
+	local logo = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(40, 28),
+		Size = UDim2.new(1, -80, 0, 110),
+		Font = theme.Font,
+		TextSize = 16,
+		TextColor3 = theme.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = LOGO,
 		ZIndex = 51,
 	}, overlay)
-	local edge = U.stroke(box, theme.Accent, 2)
 	local log = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(16, 14),
-		Size = UDim2.new(1, -32, 1, -28),
+		Position = UDim2.fromOffset(40, 165),
+		Size = UDim2.new(1, -80, 1, -260),
 		Font = theme.Font,
-		TextSize = 15,
+		TextSize = 18,
 		TextColor3 = theme.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 		Text = "",
+		ZIndex = 51,
+	}, overlay)
+	local pct = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 40, 1, -96),
+		Size = UDim2.new(1, -80, 0, 22),
+		Font = theme.Font,
+		TextSize = 16,
+		TextColor3 = theme.Accent,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Text = "0%",
+		ZIndex = 51,
+	}, overlay)
+	local barBg = U.make("Frame", {
+		Position = UDim2.new(0, 40, 1, -70),
+		Size = UDim2.new(1, -80, 0, 16),
+		BackgroundColor3 = theme.Panel,
+		BorderSizePixel = 0,
+		ZIndex = 51,
+	}, overlay)
+	local barEdge = U.stroke(barBg, theme.Dim)
+	local fill = U.make("Frame", {
+		Size = UDim2.new(0, 0, 1, 0),
+		BackgroundColor3 = theme.Accent,
+		BorderSizePixel = 0,
 		ZIndex = 52,
-	}, box)
+	}, barBg)
+	local final = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Font = theme.Font,
+		TextSize = 40,
+		TextColor3 = theme.Accent,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		TextTransparency = 1,
+		Text = finalText,
+		ZIndex = 53,
+	}, overlay)
 
 	task.spawn(function()
 		local acc = ""
-		for _, line in ipairs(lines) do
-			U.type(log, "[ OK ] " .. line, 0.025, acc)
+		local n = #lines
+		for idx, line in ipairs(lines) do
+			U.type(log, "[ OK ] " .. line, 0.03, acc)
 			acc ..= "[ OK ] " .. line .. "\n"
-			task.wait(0.12)
+			local frac = idx / (n + 1)
+			TweenService:Create(fill, TweenInfo.new(0.3), { Size = UDim2.fromScale(frac, 1) }):Play()
+			pct.Text = string.format("%d%%", math.floor(frac * 100))
+			task.wait(0.15)
 		end
-		for p = 0, 100, 2 do
-			if not log.Parent then
-				return
-			end
-			local n = math.floor(p / 5)
-			log.Text = acc .. string.format("[%s%s] %3d%%", string.rep("#", n), string.rep(" ", 20 - n), p)
-			task.wait(0.03)
-		end
-		log.Text = acc .. "[ OK ] " .. finalText
+		TweenService:Create(fill, TweenInfo.new(0.4), { Size = UDim2.fromScale(1, 1) }):Play()
+		pct.Text = "100%"
 		task.wait(0.4)
-		TweenService:Create(overlay, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(box, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(edge, TweenInfo.new(0.5), { Transparency = 1 }):Play()
-		TweenService:Create(log, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
-		task.wait(0.55)
+		E.glitch(final, finalText, 3)
+		TweenService:Create(final, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
+		task.wait(1)
+		local fade = TweenInfo.new(0.6)
+		TweenService:Create(overlay, fade, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(logo, fade, { TextTransparency = 1 }):Play()
+		TweenService:Create(log, fade, { TextTransparency = 1 }):Play()
+		TweenService:Create(pct, fade, { TextTransparency = 1 }):Play()
+		TweenService:Create(final, fade, { TextTransparency = 1 }):Play()
+		TweenService:Create(barBg, fade, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(barEdge, fade, { Transparency = 1 }):Play()
+		TweenService:Create(fill, fade, { BackgroundTransparency = 1 }):Play()
+		task.wait(0.7)
 		overlay:Destroy()
 		if onDone then
 			onDone()

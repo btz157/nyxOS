@@ -141,7 +141,7 @@ function Tab:Toggle(name, default, cb)
 		Text = "",
 	}, r)
 	local function render(animate)
-		local txt = state and "[_on_]" or "[_off_]"
+		local txt = state and "[ ON ]" or "[ OFF ]"
 		local col = state and T.Accent or T.Dim
 		if animate then
 			E.decode(right, txt, 0.2)

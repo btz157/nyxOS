@@ -49,7 +49,7 @@ function S.new(theme)
 	U.make("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.45,
+		BackgroundTransparency = 0.12,
 		BorderSizePixel = 0,
 	}, self.Back)
 	self.Cols = E.rain(self.Back, self._vw, self._vh, theme)

@@ -15,11 +15,20 @@ local BOOT_LINES = {
 	"montando interface",
 	"carregando módulos",
 	"sincronizando matriz",
-	"sistema pronto",
+	"ssistema pronto",
 }
 
-local ERROR_RED = Color3.fromRGB(255, 70, 70)
-local WARN_AMBER = Color3.fromRGB(255, 190, 0)
+-- Tipos de notificação
+local KINDS = {
+	info = { tag = "INFO", title = "INFO" },
+	success = { tag = "OK", title = "SUCESSO", color = Color3.fromRGB(57, 255, 20) },
+	warn = { tag = "!", title = "ATENÇÃO", color = Color3.fromRGB(255, 190, 0) },
+	error = { tag = "X", title = "ERRO", color = Color3.fromRGB(255, 70, 70) },
+	nyx = { tag = "NYX", title = "NYXOS", color = Color3.fromRGB(0, 234, 255) },
+}
+
+local TOP = 30 -- altura da barra de título
+local FOOT = 22 -- altura do rodapé
 
 function Window.new(opts)
 	opts = opts or {}
@@ -40,7 +49,7 @@ function Window.new(opts)
 	local cam = workspace.CurrentCamera or workspace:WaitForChild("CurrentCamera")
 	self.Center = UDim2.fromOffset(math.floor(cam.ViewportSize.X / 2 - W / 2), math.floor(cam.ViewportSize.Y / 2 - H / 2))
 
-	-- Painel: só preto e neon, sem chuva
+	-- Painel preto com borda neon e um contorno interno
 	local win = U.make("Frame", {
 		Name = "Window",
 		Size = UDim2.fromOffset(W, 2),
@@ -49,14 +58,20 @@ function Window.new(opts)
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	}, self.Gui)
-	self._winStroke = U.stroke(win, T.Accent)
+	self._winStroke = U.stroke(win, T.Accent, 1.5)
 	self.Window = win
+	U.make("Frame", {
+		Size = UDim2.new(1, -6, 1, -6),
+		Position = UDim2.fromOffset(3, 3),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 2,
+	}, win)
 	TweenService:Create(win, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		Size = self.Size,
 	}):Play()
 
 	-- Barra de título
-	local TOP = 28
 	local bar = U.make("Frame", {
 		Size = UDim2.new(1, 0, 0, TOP),
 		BackgroundColor3 = T.Black,
@@ -73,8 +88,8 @@ function Window.new(opts)
 	self._titleText = "> " .. (opts.Title or "nyxOS") .. " v" .. (Window.Version or "")
 	self._titleLbl = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(10, 0),
-		Size = UDim2.new(1, -70, 1, 0),
+		Position = UDim2.fromOffset(12, 0),
+		Size = UDim2.new(1, -80, 1, 0),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
@@ -87,7 +102,7 @@ function Window.new(opts)
 	local function tbtn(txt, idx, cb)
 		local b = U.make("TextButton", {
 			Size = UDim2.fromOffset(24, 20),
-			Position = UDim2.new(1, -28 * idx - 4, 0, 4),
+			Position = UDim2.new(1, -28 * idx - 4, 0, 5),
 			BackgroundTransparency = 1,
 			Text = txt,
 			Font = T.Font,
@@ -117,9 +132,10 @@ function Window.new(opts)
 
 	-- Corpo: abas à esquerda, painel à direita
 	local bodyTop = TOP + 6
+	local bodyH = -(bodyTop + FOOT + 6)
 	self._side = U.make("Frame", {
 		Position = UDim2.fromOffset(6, bodyTop),
-		Size = UDim2.new(0, 128, 1, -bodyTop - 6),
+		Size = UDim2.new(0, 132, 1, bodyH),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
 	}, win)
@@ -128,13 +144,58 @@ function Window.new(opts)
 	U.pad(self._side, 4, 4, 6, 6)
 
 	self._main = U.make("Frame", {
-		Position = UDim2.fromOffset(140, bodyTop),
-		Size = UDim2.new(1, -146, 1, -bodyTop - 6),
+		Position = UDim2.fromOffset(144, bodyTop),
+		Size = UDim2.new(1, -150, 1, bodyH),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	}, win)
 	U.stroke(self._main, T.Dim)
+
+	-- Rodapé com status e relógio
+	local foot = U.make("Frame", {
+		Position = UDim2.new(0, 0, 1, -FOOT),
+		Size = UDim2.new(1, 0, 0, FOOT),
+		BackgroundColor3 = T.Panel,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	}, win)
+	U.make("Frame", {
+		Size = UDim2.new(1, 0, 0, 1),
+		BackgroundColor3 = T.Dim,
+		BorderSizePixel = 0,
+	}, foot)
+	local footL = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(8, 0),
+		Size = UDim2.new(1, -120, 1, 0),
+		Font = T.Font,
+		TextSize = 13,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "",
+		ZIndex = 6,
+	}, foot)
+	local footR = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.new(1, -116, 0, 0),
+		Size = UDim2.fromOffset(108, FOOT),
+		Font = T.Font,
+		TextSize = 13,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Text = "",
+		ZIndex = 6,
+	}, foot)
+	task.spawn(U.type, footL, "● ONLINE | RShift: alternar | v" .. (Window.Version or ""), 0.015)
+	task.spawn(function()
+		while self.Gui.Parent do
+			pcall(function()
+				footR.Text = os.date("%H:%M:%S")
+			end)
+			task.wait(1)
+		end
+	end)
 
 	-- Bolinha (minimizado) no canto superior esquerdo
 	self.Bubble = U.make("Frame", {
@@ -200,7 +261,7 @@ function Window.new(opts)
 	end))
 
 	-- Boot em tela cheia, por cima da janela
-	self.Screen:boot(BOOT_LINES, "acesso liberado", function()
+	self.Screen:boot(BOOT_LINES, "ACESSO LIBERADO", function()
 		self.Screen:flash()
 		self.Screen:boost(4)
 	end)
@@ -211,17 +272,19 @@ end
 function Window:_select(t)
 	for _, o in ipairs(self._tabs) do
 		local on = o == t
+		local name = (o.label:gsub("^%s+", ""))
 		o.active = on
 		o.page.Visible = on
 		o.btn.BackgroundTransparency = on and 0 or 1
 		o.btn.TextColor3 = on and self.Theme.Black or self.Theme.Accent
+		o.btn.Text = (on and "▸ " or "  ") .. name
+		o.btn.BackgroundColor3 = self.Theme.Accent
 	end
 	if t and t.page then
 		t.page.Position = UDim2.fromOffset(30, 0)
 		TweenService:Create(t.page, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 			Position = UDim2.fromOffset(0, 0),
 		}):Play()
-		E.decode(t.btn, t.label, 0.25)
 	end
 	self._active = t
 end
@@ -236,16 +299,21 @@ function Window:Tab(name)
 	return t
 end
 
--- Notificação em tela cheia (canto inferior direito da tela)
--- kind: "info" (padrão), "warn", "error"
-function Window:Notify(text, duration, kind)
+-- Notificação em tela cheia (canto inferior direito)
+-- kind: "info" (padrão) | "success" | "warn" | "error" | "nyx"
+-- title: opcional, substitui o título padrão do tipo
+function Window:Notify(text, duration, kind, title)
 	local T = self.Theme
-	local col = kind == "error" and ERROR_RED or kind == "warn" and WARN_AMBER or T.Accent
+	local k = KINDS[kind or "info"] or KINDS.info
+	local col = k.color or T.Accent
+	duration = duration or 3
+	local headText = "[" .. k.tag .. "] " .. (title or k.title)
+
 	if not self._toasts then
 		self._toasts = U.make("Frame", {
 			AnchorPoint = Vector2.new(1, 1),
 			Position = UDim2.new(1, -16, 1, -16),
-			Size = UDim2.fromOffset(360, 420),
+			Size = UDim2.fromOffset(400, 520),
 			BackgroundTransparency = 1,
 			ZIndex = 40,
 		}, self.Gui)
@@ -259,19 +327,25 @@ function Window:Notify(text, duration, kind)
 	self._toastN += 1
 
 	local toast = U.make("Frame", {
-		Size = UDim2.fromOffset(340, 34),
+		Size = UDim2.fromOffset(390, 66),
 		BackgroundColor3 = T.Black,
-		BackgroundTransparency = 0.1,
+		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
 		LayoutOrder = self._toastN,
 		ClipsDescendants = true,
 		ZIndex = 41,
 	}, self._toasts)
-	local edge = U.stroke(toast, col)
-	local lbl = U.make("TextLabel", {
+	local edge = U.stroke(toast, col, 1)
+	local side = U.make("Frame", {
+		Size = UDim2.new(0, 4, 1, 0),
+		BackgroundColor3 = col,
+		BorderSizePixel = 0,
+		ZIndex = 42,
+	}, toast)
+	local head = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -14, 0, 20),
-		Position = UDim2.fromOffset(7, 4),
+		Position = UDim2.fromOffset(14, 6),
+		Size = UDim2.new(1, -24, 0, 18),
 		Font = T.Font,
 		TextSize = 14,
 		TextColor3 = col,
@@ -279,7 +353,20 @@ function Window:Notify(text, duration, kind)
 		Text = "",
 		ZIndex = 42,
 	}, toast)
-	local progress = U.make("Frame", {
+	local body = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(14, 26),
+		Size = UDim2.new(1, -24, 0, 34),
+		Font = T.Font,
+		TextSize = 14,
+		TextColor3 = Color3.fromRGB(215, 255, 215),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextWrapped = true,
+		Text = "",
+		ZIndex = 42,
+	}, toast)
+	local bar = U.make("Frame", {
 		Position = UDim2.new(0, 0, 1, -3),
 		Size = UDim2.new(1, 0, 0, 3),
 		BackgroundColor3 = col,
@@ -287,21 +374,52 @@ function Window:Notify(text, duration, kind)
 		ZIndex = 42,
 	}, toast)
 
+	if kind == "nyx" or kind == "error" then
+		local cam = workspace.CurrentCamera
+		if cam then
+			self.Screen:burst(cam.ViewportSize.X - 220, cam.ViewportSize.Y - 60, col, 16)
+		end
+		self.Screen:flash()
+	end
+
 	task.spawn(function()
-		local prefix = kind == "error" and "err@nyx:~$ " or "nyx@terminal:~$ "
-		U.type(lbl, text, 0.012, prefix)
+		E.decode(head, headText, 0.25)
+		task.wait(0.3)
 		if not toast.Parent then
 			return
 		end
-		TweenService:Create(progress, TweenInfo.new(duration or 3, Enum.EasingStyle.Linear), {
+		if kind == "nyx" or kind == "error" then
+			E.glitch(head, headText, 2)
+		end
+		if kind == "nyx" then
+			task.spawn(function()
+				while toast.Parent do
+					TweenService:Create(edge, TweenInfo.new(0.5), { Transparency = 0.6 }):Play()
+					task.wait(0.5)
+					if not toast.Parent then
+						break
+					end
+					TweenService:Create(edge, TweenInfo.new(0.5), { Transparency = 0 }):Play()
+					task.wait(0.5)
+				end
+			end)
+		end
+		U.type(body, text, 0.012, "> ")
+		if not toast.Parent then
+			return
+		end
+		TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 			Size = UDim2.new(0, 0, 0, 3),
 		}):Play()
-		task.wait(duration or 3)
+		task.wait(duration)
 		if toast.Parent then
-			TweenService:Create(toast, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
-			TweenService:Create(edge, TweenInfo.new(0.4), { Transparency = 1 }):Play()
-			TweenService:Create(lbl, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
-			TweenService:Create(progress, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+			local f = TweenInfo.new(0.4)
+			TweenService:Create(toast, f, { BackgroundTransparency = 1 }):Play()
+			TweenService:Create(edge, f, { Transparency = 1 }):Play()
+			TweenService:Create(side, f, { BackgroundTransparency = 1 }):Play()
+			TweenService:Create(head, f, { TextTransparency = 1 }):Play()
+			TweenService:Create(body, f, { TextTransparency = 1 }):Play()
+			TweenService:Create(bar, f, { BackgroundTransparency = 1 }):Play()
 			task.wait(0.45)
 			toast:Destroy()
 		end

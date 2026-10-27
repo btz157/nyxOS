@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0
+- Boot em tela cheia com logo nyxOS e barra de progresso
+- Notificações com tipos: info, success, warn, error e nyx (com título, glitch e pulso)
+- Fundo Matrix mais escuro
+- Painel reorganizado: marcador de aba ativa e rodapé com status e relógio
+- Toggle mostra [ ON ] / [ OFF ]
+
 ## 1.4.0
 - Efeitos em tela inteira em três camadas: chuva Matrix no fundo, efeitos e boot por cima
 - Painel limpo, só preto e neon
