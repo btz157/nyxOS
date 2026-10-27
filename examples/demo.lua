@@ -1,4 +1,4 @@
-local NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/loader.lua"))()
+local NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/nyxOS/main/dist/nyxOS-beta.lua"))()
 
 local nyx = NyxOS.new({
 	Title = "nyxOS TESTE",

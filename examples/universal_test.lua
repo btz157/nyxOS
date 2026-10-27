@@ -3,7 +3,7 @@
 -- e mostra no console (F9) exatamente o que quebrou.
 
 local compile = loadstring or load
-local URL = "https://raw.githubusercontent.com/btz157/nyxOS/main/loader.lua"
+local URL = "https://raw.githubusercontent.com/btz157/nyxOS/main/dist/nyxOS-beta.lua"
 
 local function log(...)
 	print("[nyxOS teste]", ...)
