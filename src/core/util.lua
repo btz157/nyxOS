@@ -85,4 +85,13 @@ function U.draggable(handle, target, onClick, conns)
 	end))
 end
 
+-- Quebra texto em caracteres (UTF-8 seguro)
+function U.chars(text)
+	local t = {}
+	for ch in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+		t[#t + 1] = ch
+	end
+	return t
+end
+
 return U
