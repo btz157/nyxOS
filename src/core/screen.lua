@@ -54,7 +54,10 @@ function S.new(theme, matrix)
 		BorderSizePixel = 0,
 	}, self.Back)
 	self.Streams = {}
-	self:_buildRain()
+	self._matrix = matrix ~= false
+	if self._matrix then
+		self:_buildRain()
+	end
 
 	table.insert(self._conns, RunService.RenderStepped:Connect(function(dt)
 		self.Boost = math.max(1, self.Boost - dt * 1.2)
@@ -92,7 +95,7 @@ function S:setVisible(v)
 	self.Back.Enabled = v
 	self.Top.Enabled = v
 	if v then
-		if #self.Streams == 0 then
+		if self._matrix and #self.Streams == 0 then
 			self:_buildRain()
 		end
 	else
