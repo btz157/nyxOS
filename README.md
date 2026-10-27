@@ -19,7 +19,9 @@ main:Button("Olá", function()
 end)
 ```
 
-Exemplos completos: `examples/test.lua` (teste visual) e `examples/universal_test.lua` (teste com diagnóstico de erros).
+Comece pelo modelo `examples/starter.lua`. Referência completa de todos os métodos e opções em [docs/API.md](docs/API.md).
+
+Outros exemplos: `examples/test.lua` (teste visual) e `examples/universal_test.lua` (teste com diagnóstico de erros).
 
 ## Opções principais
 
