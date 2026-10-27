@@ -89,6 +89,7 @@ end
 
 -- Glitch: pisca ruído no texto algumas vezes e volta ao normal
 function E.glitch(label, final, times)
+	local base = label.TextColor3
 	task.spawn(function()
 		for _ = 1, times or 3 do
 			if not label.Parent then
@@ -97,7 +98,7 @@ function E.glitch(label, final, times)
 			label.Text = E.noisy(final, 0.35)
 			label.TextColor3 = Color3.new(1, 1, 1)
 			task.wait(0.05)
-			label.TextColor3 = label:GetAttribute("base") or label.TextColor3
+			label.TextColor3 = base
 			task.wait(0.04)
 		end
 		if label.Parent then
