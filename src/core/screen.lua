@@ -37,6 +37,7 @@ function S.new(theme)
 	self.Theme = theme
 	self.Boost = 1
 	self._conns = {}
+	self._visible = true
 
 	local parent = guiParent()
 	self.Back = screenGui(parent, "nyxOS_FX", 900)
@@ -46,17 +47,20 @@ function S.new(theme)
 	local cam = workspace.CurrentCamera or workspace:WaitForChild("CurrentCamera")
 	self._vw, self._vh = cam.ViewportSize.X, cam.ViewportSize.Y
 
-	U.make("Frame", {
+	self._dim = U.make("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 	}, self.Back)
-	self.Streams = E.rain(self.Back, self._vw, self._vh, theme)
+	self.Streams = {}
+	self:_buildRain()
 
 	table.insert(self._conns, RunService.RenderStepped:Connect(function(dt)
 		self.Boost = math.max(1, self.Boost - dt * 1.2)
-		E.step(self.Streams, self._vh, dt, self.Boost)
+		if self._visible then
+			E.step(self.Streams, self._vh, dt, self.Boost)
+		end
 	end))
 
 	self._scan = U.make("Frame", {
@@ -73,12 +77,31 @@ function S.new(theme)
 	return self
 end
 
--- Liga/desliga chuva e scanline: desliga a camada e também cada coluna
+function S:_buildRain()
+	for _, s in ipairs(self.Streams) do
+		if s.label then
+			s.label:Destroy()
+		end
+	end
+	self.Streams = E.rain(self.Back, self._vw, self._vh, self.Theme)
+end
+
+-- Minimizado: a chuva é removida da tela. Restaurado: é criada de novo.
 function S:setVisible(v)
+	self._visible = v
 	self.Back.Enabled = v
 	self.Top.Enabled = v
-	for _, s in ipairs(self.Streams) do
-		s.label.Visible = v
+	if v then
+		if #self.Streams == 0 then
+			self:_buildRain()
+		end
+	else
+		for _, s in ipairs(self.Streams) do
+			if s.label then
+				s.label:Destroy()
+			end
+		end
+		self.Streams = {}
 	end
 end
 

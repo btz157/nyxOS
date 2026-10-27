@@ -191,7 +191,9 @@ function Window.new(opts)
 		b.MouseButton1Click:Connect(cb)
 	end
 	tbtn("X", 1, function()
-		self:Close()
+		self:Confirm("Fechar o nyxOS?", function()
+			self:Close()
+		end)
 	end)
 	tbtn("_", 2, function()
 		self:Minimize()
@@ -599,6 +601,80 @@ function Window:Notify(text, duration, kind, title)
 			toast:Destroy()
 		end
 	end)
+end
+
+-- Caixa de confirmação (SIM / NÃO) antes de uma ação destrutiva
+function Window:Confirm(question, onYes)
+	if self._confirmBox then
+		return
+	end
+	local T = self.Theme
+	local dim = U.make("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.4,
+		BorderSizePixel = 0,
+		ZIndex = 70,
+	}, self.Gui)
+	self._confirmBox = dim
+	local box = U.make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(380, 140),
+		BackgroundColor3 = T.Black,
+		BorderSizePixel = 0,
+		ZIndex = 71,
+	}, dim)
+	U.stroke(box, T.Accent, 1.5)
+	local q = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 16),
+		Size = UDim2.new(1, -32, 0, 56),
+		Font = T.Font,
+		TextSize = 16,
+		TextColor3 = T.Accent,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = "",
+		ZIndex = 72,
+	}, box)
+	task.spawn(U.type, q, "[ CONFIRMAR ] " .. question, 0.02)
+
+	local function close()
+		self._confirmBox = nil
+		dim:Destroy()
+	end
+	local function btn(text, x, cb)
+		local b = U.make("TextButton", {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(x, 0, 1, -16),
+			Size = UDim2.fromOffset(136, 34),
+			BackgroundColor3 = T.Black,
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Font = T.Font,
+			TextSize = 15,
+			TextColor3 = T.Accent,
+			Text = text,
+			ZIndex = 72,
+		}, box)
+		U.stroke(b, T.Accent)
+		b.MouseEnter:Connect(function()
+			b.BackgroundColor3 = T.Accent
+			b.TextColor3 = T.Black
+		end)
+		b.MouseLeave:Connect(function()
+			b.BackgroundColor3 = T.Black
+			b.TextColor3 = T.Accent
+		end)
+		b.MouseButton1Click:Connect(cb)
+	end
+	btn("[ SIM ]", 0.12, function()
+		close()
+		onYes()
+	end)
+	btn("[ NÃO ]", 0.52, close)
 end
 
 function Window:Minimize()
