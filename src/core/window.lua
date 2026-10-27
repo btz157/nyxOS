@@ -485,37 +485,107 @@ function Window:GetFPS()
 end
 
 -- Aba Início: informações do jogo, do personagem e escolha de skin
+-- Cartão da skin no canto inferior esquerdo do menu
+function Window:_buildCard()
+	local T = self.Theme
+	self._side.Size = UDim2.new(0, SIDE_W, 1, -(TOP + 8 + FOOT + 8 + 108))
+	local card = U.paint(U.make("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 8, 1, -(FOOT + 8)),
+		Size = UDim2.fromOffset(SIDE_W, 100),
+		BackgroundColor3 = T.Panel,
+		BorderSizePixel = 0,
+		ZIndex = 6,
+	}, self.Window), "BackgroundColor3", "Panel")
+	U.paint(U.stroke(card, T.Dim), "Color", "Dim")
+	self._skinImg = U.paint(U.make("ImageLabel", {
+		Position = UDim2.fromOffset(6, 6),
+		Size = UDim2.fromOffset(60, 60),
+		BackgroundColor3 = T.Black,
+		BorderSizePixel = 0,
+		ScaleType = Enum.ScaleType.Fit,
+		ZIndex = 7,
+	}, card), "BackgroundColor3", "Black")
+	U.paint(U.stroke(self._skinImg, T.Dim), "Color", "Dim")
+	self._skinName = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(72, 8),
+		Size = UDim2.new(1, -78, 0, 18),
+		Font = T.Font,
+		TextSize = 14,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "",
+		ZIndex = 7,
+	}, card), "TextColor3", "Accent")
+	self._skinInfo = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(72, 28),
+		Size = UDim2.new(1, -78, 0, 56),
+		Font = T.Font,
+		TextSize = 12,
+		TextColor3 = T.Dim,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextWrapped = true,
+		Text = "",
+		ZIndex = 7,
+	}, card), "TextColor3", "Dim")
+	self._skinCard = card
+end
+
+function Window:_setSkin(s)
+	if not self._skinCard or not s then
+		return
+	end
+	self._skinImg.Image = s.Image and Tab.asset(s.Image) or ""
+	self._skinName.Text = s.Name
+	self._skinInfo.Text = "Raridade: " .. tostring(s.Rarity) .. "\n" .. tostring(s.Desc)
+end
+
+-- Aba Início: jogo, personagem, skin (e cartão da skin no menu)
 function Window:_home(home)
 	local g = home.Game or DEFAULT_HOME.Game
 	local c = home.Character or DEFAULT_HOME.Character
 	local skins = home.Skins or DEFAULT_HOME.Skins
-	local tab = self:Tab("Início", "jogo, personagem e skin")
+	local tab = self:Tab("Início", "jogo, personagem e skin", home.Icon)
 
 	tab:Section("Jogo")
-	tab:Label(string.format("%s  v%s\n%s", g.Name, g.Version, g.Desc))
+	tab:Card(g.Name .. "  v" .. tostring(g.Version), g.Desc)
 
 	tab:Section("Personagem")
-	tab:Label(string.format("Nome: %s\nClasse: %s\nNível: %s\nPoder: %s", c.Name, c.Class, tostring(c.Level), tostring(c.Power)))
+	tab:Stats("Ficha", {
+		{ "Nome", c.Name },
+		{ "Classe", c.Class },
+		{ "Nível", c.Level },
+		{ "Poder", c.Power },
+	})
 
 	tab:Section("Skin")
 	local names = {}
 	for i, s in ipairs(skins) do
 		names[i] = s.Name
 	end
-	local skinInfo = tab:Label("")
-	local function show(name)
+	local function find(name)
 		for _, s in ipairs(skins) do
 			if s.Name == name then
-				skinInfo.Text = string.format("Raridade: %s\n%s", s.Rarity, s.Desc)
-				return
+				return s
 			end
 		end
+		return skins[1]
 	end
-	tab:Dropdown("Skin", names, names[1], function(v)
-		show(v)
+	local _, info = tab:Card("Skin equipada", "")
+	tab:Dropdown("Escolher skin", names, names[1], function(v)
+		local s = find(v)
+		self:_setSkin(s)
+		info.Text = "Raridade: " .. tostring(s.Rarity) .. "\n" .. tostring(s.Desc)
 		self:Notify("skin equipada: " .. v, 2, "nyx")
 	end)
-	show(names[1])
+
+	self:_buildCard()
+	local first = skins[1]
+	self:_setSkin(first)
+	info.Text = "Raridade: " .. tostring(first.Rarity) .. "\n" .. tostring(first.Desc)
 	return tab
 end
 
@@ -542,8 +612,8 @@ function Window:_select(t)
 end
 
 -- Cria uma aba (menu lateral esquerdo)
-function Window:Tab(name, desc)
-	local t = Tab.new(self, name, desc)
+function Window:Tab(name, desc, icon)
+	local t = Tab.new(self, name, desc, icon)
 	t.marker = U.paint(U.make("Frame", {
 		Position = UDim2.fromOffset(0, 4),
 		Size = UDim2.new(0, 3, 1, -8),

@@ -11,8 +11,22 @@ local function mouse()
 	return UIS:GetMouseLocation()
 end
 
-function Tab.new(lib, name, desc)
+-- Id de imagem: aceita número (123456) ou texto ("rbxassetid://123456")
+local function assetUrl(id)
+	if id == nil then
+		return ""
+	end
+	if type(id) == "number" then
+		return "rbxassetid://" .. id
+	end
+	return tostring(id)
+end
+Tab.asset = assetUrl
+
+-- icon (opcional): id de imagem mostrado ao lado do nome da aba
+function Tab.new(lib, name, desc, icon)
 	local T = lib.Theme
+	local prefix = icon and "         " or "  "
 	local btn = U.make("TextButton", {
 		Size = UDim2.new(1, 0, 0, 30),
 		BackgroundColor3 = T.Accent,
@@ -23,8 +37,18 @@ function Tab.new(lib, name, desc)
 		TextSize = 15,
 		TextColor3 = T.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "  " .. name,
+		Text = prefix .. name,
 	}, lib._side)
+	if icon then
+		U.paint(U.make("ImageLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(6, 7),
+			Size = UDim2.fromOffset(16, 16),
+			Image = assetUrl(icon),
+			ImageColor3 = T.Accent,
+			ZIndex = 2,
+		}, btn), "ImageColor3", "Accent")
+	end
 	local page = U.paint(U.make("ScrollingFrame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -45,6 +69,7 @@ function Tab.new(lib, name, desc)
 		name = name,
 		desc = desc or "",
 		active = false,
+		prefix = prefix,
 	}, Tab)
 	btn.MouseEnter:Connect(function()
 		if not self.active then
@@ -206,63 +231,53 @@ function Tab:Toggle(name, default, cb)
 	end
 end
 
--- [>] Velocidade: 5  + barra
+-- Barra em quadradinhos estilo terminal: █ preenchido, ░ vazio
+local BAR_W = 20
+local function tbar(rel)
+	local n = math.floor(math.clamp(rel, 0, 1) * BAR_W + 0.5)
+	return string.rep("█", n) .. string.rep("░", BAR_W - n)
+end
+
+-- [>] Velocidade  ██████░░░░  5   (arraste ou clique)
 function Tab:Slider(name, min, max, default, cb)
 	local T = self.lib.Theme
 	local value = default or min
 	local holder = U.paint(U.make("Frame", {
-		Size = UDim2.new(1, 0, 0, 46),
+		Size = UDim2.new(1, 0, 0, 36),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
+		Active = true,
 	}, self.page), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(holder, T.Dim), "Color", "Dim")
 	local lbl = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(10, 4),
-		Size = UDim2.new(1, -20, 0, 18),
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(1, -20, 1, 0),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Text = "",
 	}, holder), "TextColor3", "Accent")
-	local bar = U.paint(U.make("Frame", {
-		Position = UDim2.fromOffset(10, 28),
-		Size = UDim2.new(1, -20, 0, 6),
-		BackgroundColor3 = T.Black,
-		BorderSizePixel = 0,
-	}, holder), "BackgroundColor3", "Black")
-	U.paint(U.stroke(bar, T.Dim), "Color", "Dim")
-	local fill = U.paint(U.make("Frame", {
-		Size = UDim2.new(0, 0, 1, 0),
-		BackgroundColor3 = T.Accent,
-		BorderSizePixel = 0,
-	}, bar), "BackgroundColor3", "Accent")
 
-	local function render(smooth)
-		local rel = (value - min) / (max - min)
-		if smooth then
-			TweenService:Create(fill, TweenInfo.new(0.12), { Size = UDim2.fromScale(rel, 1) }):Play()
-		else
-			fill.Size = UDim2.fromScale(rel, 1)
-		end
-		lbl.Text = string.format("[>] %s: %g", name, value)
+	local function render()
+		lbl.Text = string.format("[>] %s  %s %g", name, tbar((value - min) / (max - min)), value)
 	end
-	render(false)
+	render()
 
 	local sliding = false
 	local function set(input)
-		local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+		local rel = math.clamp((input.Position.X - holder.AbsolutePosition.X) / holder.AbsoluteSize.X, 0, 1)
 		local nv = math.floor(min + (max - min) * rel + 0.5)
 		if nv ~= value then
 			value = nv
-			render(true)
+			render()
 			if cb then
 				cb(value)
 			end
 		end
 	end
-	bar.InputBegan:Connect(function(i)
+	holder.InputBegan:Connect(function(i)
 		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 			sliding = true
 			set(i)
@@ -390,45 +405,32 @@ function Tab:Textbox(name, placeholder, cb)
 	end
 end
 
--- Barra de progresso: retorna set(valor 0..1, animar?)
+-- Progresso em quadradinhos: [>] Carregamento  ████░░░░  40%
 function Tab:Progress(name, initial)
 	local T = self.lib.Theme
 	local holder = U.paint(U.make("Frame", {
-		Size = UDim2.new(1, 0, 0, 44),
+		Size = UDim2.new(1, 0, 0, 36),
 		BackgroundColor3 = T.Panel,
 		BorderSizePixel = 0,
 	}, self.page), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(holder, T.Dim), "Color", "Dim")
 	local lbl = U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(10, 4),
-		Size = UDim2.new(1, -20, 0, 18),
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(1, -20, 1, 0),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Text = "",
 	}, holder), "TextColor3", "Accent")
-	local bar = U.paint(U.make("Frame", {
-		Position = UDim2.fromOffset(10, 28),
-		Size = UDim2.new(1, -20, 0, 6),
-		BackgroundColor3 = T.Black,
-		BorderSizePixel = 0,
-	}, holder), "BackgroundColor3", "Black")
-	U.paint(U.stroke(bar, T.Dim), "Color", "Dim")
-	local fill = U.paint(U.make("Frame", {
-		Size = UDim2.new(0, 0, 1, 0),
-		BackgroundColor3 = T.Accent,
-		BorderSizePixel = 0,
-	}, bar), "BackgroundColor3", "Accent")
 
 	local value = 0
-	local function set(v, animate)
+	local function set(v)
 		value = math.clamp(v, 0, 1)
-		TweenService:Create(fill, TweenInfo.new(animate and 0.35 or 0), { Size = UDim2.fromScale(value, 1) }):Play()
-		lbl.Text = string.format("%s: %d%%", name, math.floor(value * 100 + 0.5))
+		lbl.Text = string.format("[>] %s  %s %d%%", name, tbar(value), math.floor(value * 100 + 0.5))
 	end
-	set(initial or 0, false)
+	set(initial or 0)
 	return set
 end
 
@@ -550,6 +552,135 @@ function Tab:Stat(name, fn)
 		end
 	end)
 	return lbl
+end
+
+-- Cartão com título e texto. Retorna o cartão e o rótulo do texto
+function Tab:Card(title, body)
+	local T = self.lib.Theme
+	local card = U.paint(U.make("Frame", {
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = T.Panel,
+		BorderSizePixel = 0,
+	}, self.page), "BackgroundColor3", "Panel")
+	U.paint(U.stroke(card, T.Dim), "Color", "Dim")
+	U.make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, card)
+	U.pad(card, 10, 10, 8, 8)
+	U.paint(U.make("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 18),
+		BackgroundTransparency = 1,
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "[ " .. title .. " ]",
+		LayoutOrder = 1,
+	}, card), "TextColor3", "Accent")
+	local text = U.paint(U.make("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Font = T.Font,
+		TextSize = 14,
+		TextColor3 = T.Accent,
+		TextTransparency = 0.2,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = body or "",
+		LayoutOrder = 2,
+	}, card), "TextColor3", "Accent")
+	return card, text
+end
+
+-- Ficha chave: valor. Retorna set(chave, valor) para atualizar
+function Tab:Stats(title, list)
+	local _, body = self:Card(title, "")
+	local data, order = {}, {}
+	for _, p in ipairs(list) do
+		data[p[1]] = p[2]
+		order[#order + 1] = p[1]
+	end
+	local function render()
+		local lines = {}
+		for _, k in ipairs(order) do
+			lines[#lines + 1] = string.format("%-12s %s", k, tostring(data[k]))
+		end
+		body.Text = table.concat(lines, "\n")
+	end
+	render()
+	return function(k, v)
+		if data[k] == nil then
+			order[#order + 1] = k
+		end
+		data[k] = v
+		render()
+	end
+end
+
+-- Escolha única em lista: (*) selecionado, ( ) outros
+function Tab:Radio(name, options, default, cb)
+	local T = self.lib.Theme
+	local current = default or options[1]
+	local box = U.make("Frame", {
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, self.page)
+	U.make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, box)
+	U.paint(U.make("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 18),
+		BackgroundTransparency = 1,
+		Font = T.Font,
+		TextSize = 14,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "[ " .. name .. " ]",
+		LayoutOrder = 0,
+	}, box), "TextColor3", "Accent")
+
+	local items = {}
+	local function render()
+		local t = self.lib.Theme
+		for _, it in ipairs(items) do
+			local on = it.opt == current
+			it.btn.Text = (on and "  (*) " or "  ( ) ") .. tostring(it.opt)
+			it.btn.TextColor3 = on and t.Accent or t.Dim
+		end
+	end
+	for i, opt in ipairs(options) do
+		local b = row(self, "", box)
+		b.LayoutOrder = i
+		b.Size = UDim2.new(1, 0, 0, 26)
+		b.MouseButton1Click:Connect(function()
+			current = opt
+			render()
+			if cb then
+				cb(opt)
+			end
+		end)
+		items[#items + 1] = { btn = b, opt = opt }
+	end
+	render()
+	table.insert(self.lib._refresh, render)
+	return function()
+		return current
+	end
+end
+
+-- Imagem (id do Roblox). height em pixels
+function Tab:Image(id, height)
+	local T = self.lib.Theme
+	local img = U.paint(U.make("ImageLabel", {
+		Size = UDim2.new(1, 0, 0, height or 120),
+		BackgroundColor3 = T.Black,
+		BorderSizePixel = 0,
+		Image = assetUrl(id),
+		ScaleType = Enum.ScaleType.Fit,
+	}, self.page), "BackgroundColor3", "Black")
+	U.paint(U.stroke(img, T.Dim), "Color", "Dim")
+	return img
 end
 
 return Tab
