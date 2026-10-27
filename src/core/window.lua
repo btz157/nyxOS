@@ -15,7 +15,7 @@ local BOOT_LINES = {
 	"montando interface",
 	"carregando módulos",
 	"sincronizando matriz",
-	"ssistema pronto",
+	"sistema pronto",
 }
 
 -- Tipos de notificação
