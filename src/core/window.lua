@@ -31,9 +31,9 @@ local DEFAULT_HOME = {
 	Game = { Name = "Nome do jogo", Version = "1.0.0", Desc = "Descrição curta do seu jogo. Edite em opts.Home." },
 	Character = { Name = "Seu personagem", Class = "Classe", Level = 1, Power = 100 },
 	Skins = {
-		{ Name = "Padrão", Desc = "Skin inicial do personagem." },
-		{ Name = "Neon", Desc = "Brilho verde neon nas bordas." },
-		{ Name = "Sombra", Desc = "Silhueta escura com rastro de dados." },
+		{ Emoji = "🟢", Name = "Padrão", Desc = "Skin inicial do personagem." },
+		{ Emoji = "🔥", Name = "Neon", Desc = "Brilho verde neon nas bordas." },
+		{ Emoji = "🌑", Name = "Sombra", Desc = "Silhueta escura com rastro de dados." },
 	},
 }
 

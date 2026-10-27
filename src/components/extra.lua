@@ -724,4 +724,54 @@ return function(Tab, Window)
 		U.make("UICorner", { CornerRadius = UDim.new(1, 0) }, self._skinImg)
 		U.paint(U.stroke(self._skinImg, T.Accent, 1.5), "Color", "Accent")
 	end
+
+	-- Emoji como foto (sem id): skin e avatar
+	local function isEmoji(s)
+		return type(s) == "string" and s ~= "" and not string.find(s, "rbxassetid", 1, true) and not tonumber(s)
+	end
+
+	local origCard2 = Window._buildCard
+	function Window:_buildCard()
+		origCard2(self)
+		self._skinEmoji = U.paint(U.make("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(6, 6),
+			Size = UDim2.fromOffset(60, 60),
+			Font = self.Theme.Font,
+			TextSize = 40,
+			TextColor3 = self.Theme.Accent,
+			Text = "",
+			ZIndex = 8,
+		}, self._skinCard), "TextColor3", "Accent")
+	end
+
+	local origSet = Window._setSkin
+	function Window:_setSkin(s)
+		origSet(self, s)
+		if not self._skinEmoji or not s then
+			return
+		end
+		local useEmoji = s.Emoji ~= nil
+		self._skinEmoji.Visible = useEmoji
+		self._skinImg.Visible = not useEmoji
+		if useEmoji then
+			self._skinEmoji.Text = tostring(s.Emoji)
+		end
+	end
+
+	-- Avatar: aceita emoji ou id de imagem
+	function Window:SetAvatar(src)
+		if not self._skinEmoji then
+			return
+		end
+		if isEmoji(src) then
+			self._skinEmoji.Text = src
+			self._skinEmoji.Visible = true
+			self._skinImg.Visible = false
+		else
+			self._skinImg.Image = Tab.asset(src)
+			self._skinImg.Visible = true
+			self._skinEmoji.Visible = false
+		end
+	end
 end

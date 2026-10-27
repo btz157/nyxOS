@@ -22,6 +22,7 @@ local function assetUrl(id)
 	return tostring(id)
 end
 Tab.asset = assetUrl
+local function isEmoji(s) return type(s) == "string" and s ~= "" and not string.find(s, "rbxassetid", 1, true) and not tonumber(s) end
 
 -- icon (opcional): id de imagem mostrado ao lado do nome da aba
 function Tab.new(lib, name, desc, icon)
@@ -40,14 +41,27 @@ function Tab.new(lib, name, desc, icon)
 		Text = prefix .. name,
 	}, lib._side)
 	if icon then
-		U.paint(U.make("ImageLabel", {
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(8, 6),
-			Size = UDim2.fromOffset(18, 18),
-			Image = assetUrl(icon),
-			ImageColor3 = T.Accent,
-			ZIndex = 2,
-		}, btn), "ImageColor3", "Accent")
+		if isEmoji(icon) then
+			U.make("TextLabel", {
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(6, 3),
+				Size = UDim2.fromOffset(22, 24),
+				Font = T.Font,
+				TextSize = 16,
+				TextColor3 = T.Accent,
+				Text = tostring(icon),
+				ZIndex = 2,
+			}, btn)
+		else
+			U.paint(U.make("ImageLabel", {
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(8, 6),
+				Size = UDim2.fromOffset(18, 18),
+				Image = assetUrl(icon),
+				ImageColor3 = T.Accent,
+				ZIndex = 2,
+			}, btn), "ImageColor3", "Accent")
+		end
 	end
 	local page = U.paint(U.make("ScrollingFrame", {
 		Size = UDim2.fromScale(1, 1),
@@ -669,18 +683,33 @@ function Tab:Radio(name, options, default, cb)
 	end
 end
 
--- Imagem (id do Roblox). height em pixels
-function Tab:Image(id, height)
+-- Imagem: emoji (ex.: "🎮") ou id do Roblox. height em pixels
+function Tab:Image(src, height)
 	local T = self.lib.Theme
-	local img = U.paint(U.make("ImageLabel", {
-		Size = UDim2.new(1, 0, 0, height or 120),
+	local h = height or 120
+	local frame = U.paint(U.make("Frame", {
+		Size = UDim2.new(1, 0, 0, h),
 		BackgroundColor3 = T.Black,
 		BorderSizePixel = 0,
-		Image = assetUrl(id),
-		ScaleType = Enum.ScaleType.Fit,
 	}, self.page), "BackgroundColor3", "Black")
-	U.paint(U.stroke(img, T.Dim), "Color", "Dim")
-	return img
+	U.paint(U.stroke(frame, T.Dim), "Color", "Dim")
+	if isEmoji(src) then
+		U.paint(U.make("TextLabel", {
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			Font = T.Font,
+			TextSize = math.floor(h * 0.6),
+			TextColor3 = T.Accent,
+			Text = tostring(src),
+		}, frame), "TextColor3", "Accent")
+		return frame
+	end
+	return U.make("ImageLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Image = assetUrl(src),
+		ScaleType = Enum.ScaleType.Fit,
+	}, frame)
 end
 
 return Tab
