@@ -97,7 +97,7 @@ function Window.new(opts)
 	local T = loadTheme(opts.Theme)
 	local self = setmetatable({}, Window)
 	self.Theme = T
-	self.Screen = Screen.new(T)
+	self.Screen = Screen.new(T, opts.Matrix)
 	self.Gui = self.Screen.Main
 	self._conns = {}
 	self._refresh = {}
@@ -120,7 +120,7 @@ function Window.new(opts)
 		end))
 	end
 
-	local size = opts.Size or Vector2.new(620, 410)
+	local size = opts.Size or Vector2.new(720, 440)
 	local W, H = size.X, size.Y
 	self.Size = UDim2.fromOffset(W, H)
 	local cam = workspace.CurrentCamera or workspace:WaitForChild("CurrentCamera")
@@ -921,5 +921,7 @@ function Window:Destroy()
 		self.Screen:destroy()
 	end
 end
+
+req("src/components/extra")(Tab, Window)
 
 return Window

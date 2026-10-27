@@ -32,7 +32,7 @@ local function screenGui(parent, name, order)
 	return g
 end
 
-function S.new(theme)
+function S.new(theme, matrix)
 	local self = setmetatable({}, S)
 	self.Theme = theme
 	self.Boost = 1
