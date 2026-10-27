@@ -73,6 +73,26 @@ local function corners(parent, T)
 end
 
 function Window.new(opts)
+	-- Remove instâncias antigas (evita chuva "fantasma" de execuções anteriores)
+	local env = (getgenv and getgenv()) or _G
+	if env.__nyxos_active then
+		pcall(function()
+			env.__nyxos_active:Destroy()
+		end)
+		env.__nyxos_active = nil
+	end
+	do
+		local okP, pg = pcall(function()
+			return (gethui and gethui()) or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+		end)
+		if okP and pg then
+			for _, g in ipairs(pg:GetChildren()) do
+				if g:IsA("ScreenGui") and string.sub(g.Name, 1, 5) == "nyxOS" then
+					g:Destroy()
+				end
+			end
+		end
+	end
 	opts = opts or {}
 	local T = loadTheme(opts.Theme)
 	local self = setmetatable({}, Window)
@@ -117,6 +137,7 @@ function Window.new(opts)
 	}, self.Gui), "BackgroundColor3", "Black")
 	self._winStroke = U.paint(U.stroke(win, T.Accent, 1.5), "Color", "Accent")
 	self.Window = win
+local bgf = U.make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0 }, win); U.make("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(0, 26, 10), Color3.fromRGB(0, 0, 0)), Rotation = 90 }, bgf)
 	U.paint(U.stroke(U.make("Frame", {
 		Size = UDim2.new(1, -8, 1, -8),
 		Position = UDim2.fromOffset(4, 4),
@@ -192,7 +213,7 @@ function Window.new(opts)
 	end
 	tbtn("X", 1, function()
 		self:Confirm("Fechar o nyxOS?", function()
-			self:Close()
+			self:_askClose()
 		end)
 	end)
 	tbtn("_", 2, function()
@@ -383,7 +404,80 @@ function Window.new(opts)
 		self.Screen:boost(4)
 	end)
 
+	env.__nyxos_active = self
 	return self
+end
+
+-- Pede confirmação antes de fechar a janela
+function Window:_askClose()
+	if self._asking or self._closing then
+		return
+	end
+	self._asking = true
+	local T = self.Theme
+	local dim = U.make("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.Black,
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		ZIndex = 60,
+	}, self.Window)
+	local box = U.paint(U.make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(360, 140),
+		BackgroundColor3 = T.Panel,
+		BorderSizePixel = 0,
+		ZIndex = 61,
+	}, dim), "BackgroundColor3", "Panel")
+	U.paint(U.stroke(box, T.Accent, 1.5), "Color", "Accent")
+	local msg = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 14),
+		Size = UDim2.new(1, -32, 0, 60),
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = "",
+		ZIndex = 62,
+	}, box), "TextColor3", "Accent")
+	E.decode(msg, "[ ! ] Fechar o nyxOS? Tudo será encerrado.", 0.4)
+
+	local function btn(text, px, col, cb)
+		local b = U.make("TextButton", {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(px, 0, 1, -16),
+			Size = UDim2.new(0.4, 0, 0, 34),
+			BackgroundColor3 = T.Black,
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Font = T.Font,
+			TextSize = 15,
+			TextColor3 = col,
+			Text = text,
+			ZIndex = 62,
+		}, box)
+		U.stroke(b, col)
+		b.MouseEnter:Connect(function()
+			b.BackgroundColor3 = col
+			b.TextColor3 = T.Black
+		end)
+		b.MouseLeave:Connect(function()
+			b.BackgroundColor3 = T.Black
+			b.TextColor3 = col
+		end)
+		b.MouseButton1Click:Connect(cb)
+	end
+	btn("[ SIM ]", 0.07, Color3.fromRGB(255, 70, 70), function()
+		self:Close()
+	end)
+	btn("[ NÃO ]", 0.53, T.Accent, function()
+		dim:Destroy()
+		self._asking = false
+	end)
 end
 
 function Window:GetFPS()
