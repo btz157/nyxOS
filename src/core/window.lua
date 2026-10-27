@@ -1,12 +1,11 @@
 local req = ...
 local U = req("src/core/util")
 local E = req("src/core/effects")
+local Screen = req("src/core/screen")
 local Tab = req("src/components/tab")
 
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local Players = game:GetService("Players")
 
 local Window = {}
 Window.__index = Window
@@ -27,6 +26,8 @@ function Window.new(opts)
 	local T = req("src/themes/" .. (opts.Theme or "neon"))
 	local self = setmetatable({}, Window)
 	self.Theme = T
+	self.Screen = Screen.new(T)
+	self.Gui = self.Screen.Main
 	self._conns = {}
 	self._tabs = {}
 	self._active = nil
@@ -36,25 +37,10 @@ function Window.new(opts)
 	local size = opts.Size or Vector2.new(560, 380)
 	local W, H = size.X, size.Y
 	self.Size = UDim2.fromOffset(W, H)
-
 	local cam = workspace.CurrentCamera or workspace:WaitForChild("CurrentCamera")
 	self.Center = UDim2.fromOffset(math.floor(cam.ViewportSize.X / 2 - W / 2), math.floor(cam.ViewportSize.Y / 2 - H / 2))
 
-	local okH, hui = pcall(function()
-		return gethui and gethui()
-	end)
-	local parent = (okH and hui) or Players.LocalPlayer:WaitForChild("PlayerGui")
-
-	self.Gui = U.make("ScreenGui", {
-		Name = "nyxOS",
-		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
-		DisplayOrder = 999,
-	}, parent)
-	if syn and syn.protect_gui then
-		pcall(syn.protect_gui, self.Gui)
-	end
-
+	-- Painel: só preto e neon, sem chuva
 	local win = U.make("Frame", {
 		Name = "Window",
 		Size = UDim2.fromOffset(W, 2),
@@ -65,25 +51,15 @@ function Window.new(opts)
 	}, self.Gui)
 	self._winStroke = U.stroke(win, T.Accent)
 	self.Window = win
-
-	-- Abertura: a janela cresce a partir de uma linha
 	TweenService:Create(win, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		Size = self.Size,
 	}):Play()
-
-	-- Matrix só no fundo
-	local bg = U.make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 1 }, win)
-	self._cols = E.rain(bg, W, H, T)
-	table.insert(self._conns, RunService.RenderStepped:Connect(function(dt)
-		E.step(self._cols, H, dt)
-	end))
 
 	-- Barra de título
 	local TOP = 28
 	local bar = U.make("Frame", {
 		Size = UDim2.new(1, 0, 0, TOP),
 		BackgroundColor3 = T.Black,
-		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		ZIndex = 5,
 	}, win)
@@ -185,34 +161,25 @@ function Window.new(opts)
 		self:Restore()
 	end, self._conns)
 
-	-- Linha de varredura contínua
-	local scan = U.make("Frame", {
-		Size = UDim2.new(1, 0, 0, 2),
-		BackgroundColor3 = T.Accent,
-		BackgroundTransparency = 0.8,
-		BorderSizePixel = 0,
-		ZIndex = 20,
-	}, win)
-	TweenService:Create(scan, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1), {
-		Position = UDim2.fromScale(0, 1),
-	}):Play()
-
-	-- Efeitos aleatórios: glitch no título, varredura e pulso na borda; bolinha decodifica
+	-- Efeitos aleatórios de tela inteira
 	task.spawn(function()
 		while self.Gui.Parent do
-			task.wait(math.random(20, 50) / 10)
+			task.wait(math.random(15, 35) / 10)
 			if self.Visible and self.Window.Parent then
 				local r = math.random()
-				if r < 0.35 then
+				if r < 0.3 then
 					E.glitch(self._titleLbl, self._titleText, 3)
+				elseif r < 0.55 then
+					self.Screen:sweep()
 				elseif r < 0.7 then
-					E.sweep(self.Window, T.Accent)
+					self.Screen:flash()
+					self.Screen:boost(3)
 				else
 					TweenService:Create(self._winStroke, TweenInfo.new(0.1), { Transparency = 0.6 }):Play()
 					task.wait(0.12)
 					TweenService:Create(self._winStroke, TweenInfo.new(0.3), { Transparency = 0 }):Play()
 				end
-			elseif not self.Visible and self.Bubble.Parent then
+			elseif not self.Visible then
 				E.decode(self._bubbleLbl, "nyx", 0.4)
 			end
 		end
@@ -232,9 +199,11 @@ function Window.new(opts)
 		end
 	end))
 
-	if opts.Boot ~= false then
-		E.boot(win, T, BOOT_LINES, "acesso liberado")
-	end
+	-- Boot em tela cheia, por cima da janela
+	self.Screen:boot(BOOT_LINES, "acesso liberado", function()
+		self.Screen:flash()
+		self.Screen:boost(4)
+	end)
 
 	return self
 end
@@ -344,6 +313,7 @@ function Window:Minimize()
 		return
 	end
 	self.Visible = false
+	self.Screen:flash()
 	self.Center = self.Window.Position
 	local t = TweenService:Create(self.Window, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Size = UDim2.fromOffset(0, 0),
@@ -372,21 +342,26 @@ function Window:Restore()
 	self.Bubble.Visible = false
 	self.Window.Visible = true
 	self.Window.Size = UDim2.fromOffset(0, 0)
-	E.burst(self.Gui, 37, 37, self.Theme.Accent, 14)
+	self.Screen:burst(37, 37, self.Theme.Accent, 14)
+	self.Screen:boost(3)
+	self.Screen:flash()
 	TweenService:Create(self.Window, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Size = self.Size,
 		Position = self.Center,
 	}):Play()
 end
 
--- Fechar com animação: glitch no título e a janela colapsa numa linha
+-- Fechar com animação de tela inteira: glitch, flash, varredura e colapso em linha
 function Window:Close()
 	if self._closing then
 		return
 	end
 	self._closing = true
 	E.glitch(self._titleLbl, self._titleText, 4)
-	task.delay(0.25, function()
+	self.Screen:boost(5)
+	self.Screen:flash()
+	self.Screen:sweep()
+	task.delay(0.35, function()
 		local t = TweenService:Create(self.Window, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
 			Size = UDim2.new(self.Size.X.Scale, self.Size.X.Offset, 0, 2),
 		})
@@ -402,8 +377,8 @@ function Window:Destroy()
 		c:Disconnect()
 	end
 	self._conns = {}
-	if self.Gui then
-		self.Gui:Destroy()
+	if self.Screen then
+		self.Screen:destroy()
 	end
 end
 

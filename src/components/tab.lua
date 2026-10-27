@@ -106,8 +106,8 @@ function Tab:Button(name, cb)
 	local r = row(self, text)
 	r.MouseButton1Click:Connect(function()
 		local m = mouse()
-		E.burst(self.lib.Gui, m.X, m.Y, T.Accent, 12)
-		E.decode(r, text, 0.3)
+		self.lib.Screen:burst(m.X, m.Y, T.Accent, 12)
+		E.decode(r, text, 0.3); self.lib.Screen:boost(2.5)
 		TweenService:Create(r, TweenInfo.new(0.08), { BackgroundColor3 = Color3.new(1, 1, 1) }):Play()
 		task.delay(0.08, function()
 			if r.Parent then
@@ -154,7 +154,7 @@ function Tab:Toggle(name, default, cb)
 	r.MouseButton1Click:Connect(function()
 		state = not state
 		local m = mouse()
-		E.burst(self.lib.Gui, m.X, m.Y, state and T.Accent or T.Dim, 8)
+		self.lib.Screen:burst(m.X, m.Y, state and T.Accent or T.Dim, 8)
 		render(true)
 		if cb then
 			cb(state)
@@ -237,7 +237,7 @@ function Tab:Slider(name, min, max, default, cb)
 		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 			if sliding then
 				local m = mouse()
-				E.burst(self.lib.Gui, m.X, m.Y, T.Accent, 6)
+				self.lib.Screen:burst(m.X, m.Y, T.Accent, 6)
 			end
 			sliding = false
 		end

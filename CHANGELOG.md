@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+- Efeitos em tela inteira em três camadas: chuva Matrix no fundo, efeitos e boot por cima
+- Painel limpo, só preto e neon
+- Boot em tela cheia, fora da janela
+- Chuva acelera ao clicar e ao disparar efeitos
+
 ## 1.3.0
 - Notificações em tela cheia, com tipos info, warn e error e barra de progresso
 - Decodificação de texto (glifos se resolvem) em abas, seções e toggles

@@ -12,7 +12,7 @@ function E.scramble(c)
 	c.lbl.Text = table.concat(rows, "\n")
 end
 
--- Chuva Matrix para o fundo
+-- Chuva Matrix cobrindo a tela inteira
 function E.rain(parent, w, h, theme)
 	local cols = {}
 	for i = 0, math.ceil(w / COL) do
@@ -22,24 +22,26 @@ function E.rain(parent, w, h, theme)
 			Font = theme.Font,
 			TextSize = 14,
 			TextColor3 = theme.Accent,
-			TextTransparency = 0.7,
+			TextTransparency = 0.55,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 			Text = "",
 		}, parent)
-		local c = { lbl = lbl, x = i * COL, y = -math.random(0, h), spd = math.random(60, 160), len = math.random(8, 22) }
+		local c = { lbl = lbl, x = i * COL, y = -math.random(0, h), spd = math.random(60, 180), len = math.random(8, 22) }
 		E.scramble(c)
 		cols[#cols + 1] = c
 	end
 	return cols
 end
 
-function E.step(cols, h, dt)
+-- mul acelera a chuva (ex.: ao clicar)
+function E.step(cols, h, dt, mul)
+	mul = mul or 1
 	for _, c in ipairs(cols) do
-		c.y += c.spd * dt
+		c.y += c.spd * mul * dt
 		if c.y > h then
 			c.y = -c.len * COL - math.random(0, 200)
-			c.spd = math.random(60, 160)
+			c.spd = math.random(60, 180)
 			c.len = math.random(8, 22)
 			E.scramble(c)
 		end
@@ -87,7 +89,7 @@ function E.decode(label, final, duration)
 	end)
 end
 
--- Glitch: pisca ruído no texto algumas vezes e volta ao normal
+-- Glitch: pisca ruído no texto e volta ao normal
 function E.glitch(label, final, times)
 	local base = label.TextColor3
 	task.spawn(function()
@@ -107,8 +109,8 @@ function E.glitch(label, final, times)
 	end)
 end
 
--- Partículas de caractere que saem do ponto (ex.: clique)
-function E.burst(gui, x, y, color, count)
+-- Partículas de caractere que saem do ponto
+function E.burst(parent, x, y, color, count)
 	for _ = 1, count or 10 do
 		local p = U.make("TextLabel", {
 			BackgroundTransparency = 1,
@@ -119,20 +121,20 @@ function E.burst(gui, x, y, color, count)
 			TextColor3 = color,
 			Text = U.glyph(),
 			ZIndex = 60,
-		}, gui)
+		}, parent)
 		local ang = math.random() * math.pi * 2
-		local dist = math.random(25, 70)
-		TweenService:Create(p, TweenInfo.new(0.5 + math.random() * 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		local dist = math.random(30, 90)
+		TweenService:Create(p, TweenInfo.new(0.5 + math.random() * 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Position = UDim2.fromOffset(x + math.cos(ang) * dist, y + math.sin(ang) * dist),
 			TextTransparency = 1,
 		}):Play()
-		task.delay(0.9, function()
+		task.delay(1, function()
 			p:Destroy()
 		end)
 	end
 end
 
--- Faixa de varredura horizontal que atravessa a área
+-- Faixa de varredura que atravessa a tela inteira
 function E.sweep(parent, color)
 	local y = math.random()
 	local line = U.make("Frame", {
@@ -143,7 +145,7 @@ function E.sweep(parent, color)
 		BorderSizePixel = 0,
 		ZIndex = 25,
 	}, parent)
-	local t = TweenService:Create(line, TweenInfo.new(0.7, Enum.EasingStyle.Linear), {
+	local t = TweenService:Create(line, TweenInfo.new(0.8, Enum.EasingStyle.Linear), {
 		Position = UDim2.new(1, 0, y, 0),
 	})
 	t:Play()
@@ -152,35 +154,45 @@ function E.sweep(parent, color)
 	end)
 end
 
--- Boot: linhas digitando + barra de progresso
-function E.boot(win, theme, lines, finalText)
+-- Boot em tela cheia: tela escurece e um console centralizado digita as linhas
+function E.boot(parent, theme, lines, finalText, onDone)
 	local overlay = U.make("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = theme.Black,
-		BackgroundTransparency = 0.25,
+		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
 		ZIndex = 50,
-	}, win)
+	}, parent)
+	local box = U.make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(560, 300),
+		BackgroundColor3 = theme.Black,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		ZIndex = 51,
+	}, overlay)
+	local edge = U.stroke(box, theme.Accent, 2)
 	local log = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(14, 12),
-		Size = UDim2.new(1, -28, 1, -24),
+		Position = UDim2.fromOffset(16, 14),
+		Size = UDim2.new(1, -32, 1, -28),
 		Font = theme.Font,
-		TextSize = 14,
+		TextSize = 15,
 		TextColor3 = theme.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 		Text = "",
-		ZIndex = 51,
-	}, overlay)
+		ZIndex = 52,
+	}, box)
 
 	task.spawn(function()
 		local acc = ""
 		for _, line in ipairs(lines) do
-			U.type(log, "[ OK ] " .. line, 0.02, acc)
+			U.type(log, "[ OK ] " .. line, 0.025, acc)
 			acc ..= "[ OK ] " .. line .. "\n"
-			task.wait(0.15)
+			task.wait(0.12)
 		end
 		for p = 0, 100, 2 do
 			if not log.Parent then
@@ -193,9 +205,14 @@ function E.boot(win, theme, lines, finalText)
 		log.Text = acc .. "[ OK ] " .. finalText
 		task.wait(0.4)
 		TweenService:Create(overlay, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(box, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(edge, TweenInfo.new(0.5), { Transparency = 1 }):Play()
 		TweenService:Create(log, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
 		task.wait(0.55)
 		overlay:Destroy()
+		if onDone then
+			onDone()
+		end
 	end)
 end
 
