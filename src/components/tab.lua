@@ -618,7 +618,7 @@ function Tab:Stats(title, list)
 	local function render()
 		local lines = {}
 		for _, k in ipairs(order) do
-			lines[#lines + 1] = string.format("%-12s %s", k, tostring(data[k]))
+			lines[#lines + 1] = string.format("%-10s %s", k, tostring(data[k]))
 		end
 		body.Text = table.concat(lines, "\n")
 	end
