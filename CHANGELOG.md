@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+- Chuva e scanline desligam ao minimizar (não ficam na tela com a janela fechada)
+- Notificações no canto superior direito
+- Bolinha mostra "nyx" revelado letra por letra
+- Painel com cabeçalho de página, rodapé, toggle com indicador e novos componentes: Label, Divider, Textbox, Dropdown, Progress
+- Temas neon, amber, cyber, ice e blood, com troca ao vivo
+
 ## 1.5.0
 - Boot em tela cheia com logo nyxOS e barra de progresso
 - Notificações com tipos: info, success, warn, error e nyx (com título, glitch e pulso)

@@ -12,43 +12,80 @@ function E.scramble(c)
 	c.lbl.Text = table.concat(rows, "\n")
 end
 
--- Chuva Matrix cobrindo a tela inteira
-function E.rain(parent, w, h, theme)
-	local cols = {}
-	for i = 0, math.ceil(w / COL) do
-		local lbl = U.make("TextLabel", {
-			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(COL, h * 2),
-			Font = theme.Font,
-			TextSize = 14,
-			TextColor3 = theme.Accent,
-			TextTransparency = 0.55,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
-			Text = "",
-		}, parent)
-		local c = { lbl = lbl, x = i * COL, y = -math.random(0, h), spd = math.random(60, 180), len = math.random(8, 22) }
-		E.scramble(c)
-		cols[#cols + 1] = c
+-- Chuva Matrix: colunas com cabeça brilhante e rastro esmaecido
+local RCOL = 16
+local RLH = 15
+local RTS = 13
+
+local function glyphs(n)
+	local t = {}
+	for i = 1, n do
+		t[i] = U.glyph()
 	end
-	return cols
+	return table.concat(t, "\n")
 end
 
--- mul acelera a chuva (ex.: ao clicar)
-function E.step(cols, h, dt, mul)
+local function newStream(parent, x, h, theme, anywhere)
+	local len = math.random(6, 18)
+	local s = {
+		x = x,
+		len = len,
+		y = anywhere and math.random(0, math.floor(h)) or -math.random(0, math.floor(h / 3)),
+		spd = math.random(70, 200),
+	}
+	s.trail = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(RCOL, len * RLH),
+		Font = theme.Font,
+		TextSize = RTS,
+		TextColor3 = theme.Accent,
+		TextTransparency = 0.5,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = glyphs(len),
+	}, parent)
+	s.head = U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(RCOL, RLH),
+		Font = theme.Font,
+		TextSize = RTS,
+		TextColor3 = Color3.fromRGB(230, 255, 230),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = U.glyph(),
+	}, parent)
+	return s
+end
+
+function E.rain(parent, w, h, theme)
+	local streams = {}
+	for x = 0, math.ceil(w / RCOL) do
+		if math.random() < 0.85 then
+			streams[#streams + 1] = newStream(parent, x * RCOL, h, theme, true)
+		end
+	end
+	return streams
+end
+
+function E.step(streams, h, dt, mul)
 	mul = mul or 1
-	for _, c in ipairs(cols) do
-		c.y += c.spd * mul * dt
-		if c.y > h then
-			c.y = -c.len * COL - math.random(0, 200)
-			c.spd = math.random(60, 180)
-			c.len = math.random(8, 22)
-			E.scramble(c)
+	for _, s in ipairs(streams) do
+		s.y += s.spd * mul * dt
+		if s.y - s.len * RLH > h then
+			s.y = -math.random(0, math.floor(h / 3))
+			s.len = math.random(6, 18)
+			s.spd = math.random(70, 200)
+			s.trail.Size = UDim2.fromOffset(RCOL, s.len * RLH)
+			s.trail.Text = glyphs(s.len)
 		end
 		if math.random() < 0.03 then
-			E.scramble(c)
+			s.trail.Text = glyphs(s.len)
 		end
-		c.lbl.Position = UDim2.fromOffset(c.x, c.y)
+		if math.random() < 0.3 then
+			s.head.Text = U.glyph()
+		end
+		s.trail.Position = UDim2.fromOffset(s.x, s.y - s.len * RLH)
+		s.head.Position = UDim2.fromOffset(s.x, s.y)
 	end
 end
 
@@ -263,6 +300,35 @@ function E.boot(parent, theme, lines, finalText, onDone)
 		overlay:Destroy()
 		if onDone then
 			onDone()
+		end
+	end)
+end
+
+-- Revela o texto letra por letra: cada caractere passa por letras aleatórias até fixar o certo
+function E.lock(label, final, speed)
+	local target = U.chars(final)
+	local n = #target
+	local id = (label:GetAttribute("lock") or 0) + 1
+	label:SetAttribute("lock", id)
+	task.spawn(function()
+		local out = {}
+		for i = 1, n do
+			out[i] = U.glyph()
+		end
+		for i = 1, n do
+			for _ = 1, 6 + i * 2 do
+				if not label.Parent or label:GetAttribute("lock") ~= id then
+					return
+				end
+				out[i] = U.glyph()
+				label.Text = table.concat(out)
+				task.wait(speed or 0.035)
+			end
+			out[i] = target[i]
+			label.Text = table.concat(out)
+		end
+		if label.Parent and label:GetAttribute("lock") == id then
+			label.Text = final
 		end
 	end)
 end

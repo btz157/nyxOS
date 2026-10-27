@@ -94,4 +94,21 @@ function U.chars(text)
 	return t
 end
 
+-- Registro de cores ligadas ao tema (para trocar o tema ao vivo)
+local painted = {}
+function U.paint(obj, prop, key)
+	painted[#painted + 1] = { obj = obj, prop = prop, key = key }
+	return obj
+end
+function U.repaint(T)
+	for i = #painted, 1, -1 do
+		local p = painted[i]
+		if p.obj.Parent == nil then
+			table.remove(painted, i)
+		elseif T[p.key] ~= nil then
+			p.obj[p.prop] = T[p.key]
+		end
+	end
+end
+
 return U

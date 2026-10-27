@@ -2,12 +2,12 @@ local NyxOS = loadstring(game:HttpGet("https://raw.githubusercontent.com/btz157/
 
 local nyx = NyxOS.new({
 	Title = "nyxOS TESTE",
-	Size = Vector2.new(560, 380),
+	Size = Vector2.new(620, 410),
 	Theme = "neon",
 	Keybind = Enum.KeyCode.RightShift,
 })
 
-local acoes = nyx:Tab("Ações")
+local acoes = nyx:Tab("Ações", "botões e notificações")
 acoes:Section("Notificações")
 acoes:Button("Sucesso", function()
 	nyx:Notify("operação concluída com sucesso", 3, "success")
@@ -24,8 +24,10 @@ end)
 acoes:Button("nyxOS", function()
 	nyx:Notify("bem-vindo ao núcleo nyxOS", 4, "nyx")
 end)
+acoes:Divider()
+acoes:Label("Clique nos botões para ver as notificações. RightShift ou o _ minimiza para a bolinha.")
 
-local opcoes = nyx:Tab("Opções")
+local opcoes = nyx:Tab("Opções", "ligue e desligue recursos")
 opcoes:Section("Jogador")
 opcoes:Toggle("Godmode", false, function(on)
 	nyx:Notify("godmode " .. (on and "ativado" or "desativado"), 2, on and "success" or "info")
@@ -36,8 +38,17 @@ end)
 opcoes:Toggle("ESP", true, function(on)
 	nyx:Notify("ESP " .. (on and "ligado" or "desligado"), 2, "info")
 end)
+opcoes:Section("Perfil")
+opcoes:Textbox("Apelido", "digite e aperte Enter", function(txt, enter)
+	if enter then
+		nyx:Notify("apelido definido: " .. txt, 3, "nyx", "PERFIL")
+	end
+end)
+opcoes:Dropdown("Modo", { "Normal", "Rápido", "Silencioso" }, "Normal", function(v)
+	nyx:Notify("modo: " .. v, 2, "info")
+end)
 
-local config = nyx:Tab("Config")
+local config = nyx:Tab("Config", "ajustes e tema")
 config:Section("Ajustes")
 config:Slider("Velocidade", 1, 10, 5, function(v)
 	print("velocidade:", v)
@@ -45,6 +56,13 @@ end)
 config:Slider("Volume", 0, 100, 50, function(v)
 	print("volume:", v)
 end)
-config:Slider("Raio", 1, 50, 10, function(v)
-	print("raio:", v)
+local progSet = config:Progress("Carregamento", 0.2)
+local cur = 0.2
+config:Button("Avançar 10%", function()
+	cur = math.min(1, cur + 0.1)
+	progSet(cur, true)
+end)
+config:Section("Tema")
+config:Dropdown("Tema", { "neon", "amber", "cyber", "ice", "blood" }, "neon", function(v)
+	nyx:SetTheme(v)
 end)
