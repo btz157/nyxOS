@@ -825,4 +825,96 @@ return function(Tab, Window)
 		end
 		return r
 	end
+
+	-- ===== Configurações salvas automaticamente (arquivo nyxOS_config.json) =====
+	local HttpService = game:GetService("HttpService")
+	local FILE = "nyxOS_config.json"
+	local store = {}
+	local loaded = false
+
+	local function loadStore()
+		if loaded then
+			return
+		end
+		loaded = true
+		local ok, raw = pcall(function()
+			if isfile and isfile(FILE) then
+				return readfile(FILE)
+			end
+		end)
+		if ok and raw then
+			local ok2, data = pcall(function()
+				return HttpService:JSONDecode(raw)
+			end)
+			if ok2 and type(data) == "table" then
+				store = data
+			end
+		end
+	end
+
+	local function saveStore()
+		pcall(function()
+			if writefile then
+				writefile(FILE, HttpService:JSONEncode(store))
+			end
+		end)
+	end
+
+	-- Lê uma configuração salva (ou o padrão)
+	function Window:Get(key, default)
+		loadStore()
+		local v = store[key]
+		if v == nil then
+			return default
+		end
+		return v
+	end
+
+	-- Salva uma configuração (automático)
+	function Window:Set(key, value)
+		loadStore()
+		store[key] = value
+		saveStore()
+	end
+
+	function Window:ResetSettings()
+		store = {}
+		saveStore()
+	end
+
+	-- Matrix: opts.Matrix tem prioridade; senão usa a preferência salva
+	function Window._matrixOpt(opts, self)
+		if opts.Matrix ~= nil then
+			return opts.Matrix
+		end
+		return self:Get("matrix", true)
+	end
+
+	-- Aba pronta com as preferências (opcional)
+	function Window:SettingsTab()
+		local t = self:Tab("Sistema", "preferências salvas automaticamente", "🛠️")
+		t:Section("Inicialização")
+		t:Toggle("Pular animação inicial", self:Get("skipBoot", false), function(on)
+			self:Set("skipBoot", on)
+		end)
+		t:Toggle("Iniciar minimizado", self:Get("startMinimized", false), function(on)
+			self:Set("startMinimized", on)
+		end)
+		t:Section("Visual")
+		t:Toggle("Chuva Matrix", self:Get("matrix", true), function(on)
+			self:Set("matrix", on)
+			self:Notify("aplicado na próxima execução", 2, "info")
+		end)
+		t:Section("Arquivo")
+		t:Stat("Salvo em", function()
+			return FILE
+		end)
+		t:Button("Restaurar padrões", function()
+			self:Dialog("Apagar todas as preferências salvas?", function()
+				self:ResetSettings()
+				self:Notify("preferências restauradas", 2, "success")
+			end)
+		end)
+		return t
+	end
 end

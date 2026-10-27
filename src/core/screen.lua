@@ -141,6 +141,12 @@ function S:flash()
 end
 
 function S:boot(lines, finalText, onDone)
+	if self.SkipBoot then
+		if onDone then
+			onDone()
+		end
+		return
+	end
 	E.powerOn(self.Top, self.Theme, function()
 		E.boot(self.Top, self.Theme, lines, finalText, onDone)
 	end)

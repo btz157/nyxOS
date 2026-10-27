@@ -98,7 +98,7 @@ function Window.new(opts)
 	local T = loadTheme(opts.Theme)
 	local self = setmetatable({}, Window)
 	self.Theme = T
-	self.Screen = Screen.new(T, opts.Matrix)
+	self.Screen = Screen.new(T, Window._matrixOpt(opts, self))
 	self.Gui = self.Screen.Main
 	self._conns = {}
 	self._refresh = {}
@@ -404,11 +404,17 @@ local bgf = U.make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C
 	end
 
 	-- Boot em tela cheia, por cima da janela (com SKIP)
+	self.Screen.SkipBoot = self:Get("skipBoot", false)
 	self.Screen:boot(BOOT_LINES, "ACESSO LIBERADO", function()
 		self.Screen:flash()
 		self.Screen:boost(4)
 	end)
 
+	if self:Get("startMinimized", false) then
+		task.delay(0.8, function()
+			self:Minimize()
+		end)
+	end
 	env.__nyxos_active = self
 	return self
 end
