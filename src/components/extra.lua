@@ -779,4 +779,50 @@ return function(Tab, Window)
 			self._skinEmoji.Visible = false
 		end
 	end
+
+	-- Erros dentro das suas funções viram notificação (a interface continua funcionando)
+	local GUARDED = {
+		Button = 2, Toggle = 3, Slider = 5, Dropdown = 4, Radio = 4, Textbox = 3,
+		Stepper = 6, Range = 6, Checklist = 4, Keybind = 3, Palette = 4, Search = 3, Terminal = 3,
+	}
+	for name, idx in pairs(GUARDED) do
+		local orig = Tab[name]
+		if orig then
+			Tab[name] = function(self, ...)
+				local args = table.pack(...)
+				local f = args[idx]
+				if type(f) == "function" then
+					local lib = self.lib
+					args[idx] = function(...)
+						local ok, err = pcall(f, ...)
+						if not ok and lib and lib.Notify then
+							lib:Notify(tostring(err), 5, "error", "ERRO NO SCRIPT")
+						end
+					end
+				end
+				return orig(self, table.unpack(args, 1, args.n))
+			end
+		end
+	end
+
+	-- No máximo 5 notificações na tela: as mais antigas saem
+	local origNotify2 = Window.Notify
+	function Window:Notify(text, duration, kind, title)
+		local r = origNotify2(self, text, duration, kind, title)
+		if self._toasts then
+			local toasts = {}
+			for _, c in ipairs(self._toasts:GetChildren()) do
+				if c:IsA("Frame") then
+					table.insert(toasts, c)
+				end
+			end
+			table.sort(toasts, function(a, b)
+				return a.LayoutOrder < b.LayoutOrder
+			end)
+			while #toasts > 5 do
+				table.remove(toasts, 1):Destroy()
+			end
+		end
+		return r
+	end
 end
