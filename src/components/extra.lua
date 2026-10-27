@@ -374,7 +374,7 @@ return function(Tab, Window)
 			if #data == 0 then
 				return
 			end
-			local lo, hi = table.unpack(data)
+			local lo, hi = data[1], data[1]
 			for _, v in ipairs(data) do
 				lo = math.min(lo, v)
 				hi = math.max(hi, v)
