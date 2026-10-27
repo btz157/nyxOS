@@ -199,18 +199,68 @@ return function(Tab, Window)
 		end
 	end
 
-	-- [>] Nome  [-] 5 [+]. Clique na metade esquerda diminui, na direita aumenta
+	-- [>] Nome   [-]  5  [+]   (botões separados: cada um faz a sua ação)
 	function Tab:Stepper(name, min, max, default, step, cb)
 		step = step or 1
+		local T = self.lib.Theme
 		local v = default or min
-		local row = item(self, "", nil, 32)
-		local function render()
-			row.Text = string.format("[>] %s   [-]  %g  [+]", name, v)
+		local row = U.paint(U.make("Frame", {
+			Size = UDim2.new(1, 0, 0, 32),
+			BackgroundColor3 = T.Panel,
+			BorderSizePixel = 0,
+		}, self.page), "BackgroundColor3", "Panel")
+		U.paint(U.stroke(row, T.Dim), "Color", "Dim")
+		local lbl = U.paint(U.make("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(10, 0),
+			Size = UDim2.new(1, -150, 1, 0),
+			Font = T.Font,
+			TextSize = 15,
+			TextColor3 = T.Accent,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Text = "",
+		}, row), "TextColor3", "Accent")
+		local valL = U.paint(U.make("TextLabel", {
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -50, 0.5, 0),
+			Size = UDim2.fromOffset(40, 22),
+			Font = T.Font,
+			TextSize = 15,
+			TextColor3 = T.Accent,
+			Text = "",
+		}, row), "TextColor3", "Accent")
+		local function mkBtn(text, xOff)
+			local b = U.paint(U.make("TextButton", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, xOff, 0.5, 0),
+				Size = UDim2.fromOffset(34, 22),
+				BackgroundColor3 = T.Black,
+				BorderSizePixel = 0,
+				AutoButtonColor = false,
+				Font = T.Font,
+				TextSize = 15,
+				TextColor3 = T.Accent,
+				Text = text,
+			}, row), "TextColor3", "Accent")
+			U.paint(U.stroke(b, T.Dim), "Color", "Dim")
+			b.MouseEnter:Connect(function()
+				b.BackgroundColor3 = self.lib.Theme.Accent
+				b.TextColor3 = self.lib.Theme.Black
+			end)
+			b.MouseLeave:Connect(function()
+				b.BackgroundColor3 = self.lib.Theme.Black
+				b.TextColor3 = self.lib.Theme.Accent
+			end)
+			return b
 		end
-		render()
-		row.MouseButton1Click:Connect(function()
-			local m = mouse()
-			local dir = m.X < row.AbsolutePosition.X + row.AbsoluteSize.X / 2 and -1 or 1
+		local minus = mkBtn("[-]", -96)
+		local plus = mkBtn("[+]", -8)
+		local function render()
+			lbl.Text = string.format("[>] %s", name)
+			valL.Text = string.format("%g", v)
+		end
+		local function change(dir)
 			local nv = math.clamp(v + dir * step, min, max)
 			if nv ~= v then
 				v = nv
@@ -219,7 +269,14 @@ return function(Tab, Window)
 					cb(v)
 				end
 			end
+		end
+		minus.MouseButton1Click:Connect(function()
+			change(-1)
 		end)
+		plus.MouseButton1Click:Connect(function()
+			change(1)
+		end)
+		render()
 		return function()
 			return v
 		end
