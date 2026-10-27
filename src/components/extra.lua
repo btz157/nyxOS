@@ -611,7 +611,7 @@ return function(Tab, Window)
 		table.insert(self.lib._conns, UIS.InputChanged:Connect(function(i)
 			if tip.Visible and i.UserInputType == Enum.UserInputType.MouseMovement then
 				local m = mouse()
-				tip.Position = UDim2.fromOffset(m.X + 14, m.Y + 12)
+				tip.Position = UDim2.fromOffset(math.min(m.X + 14, workspace.CurrentCamera.ViewportSize.X - 270), math.min(m.Y + 12, workspace.CurrentCamera.ViewportSize.Y - 30))
 			end
 		end))
 		return tip

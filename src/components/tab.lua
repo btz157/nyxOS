@@ -252,7 +252,7 @@ local function tbar(rel)
 	return string.rep("█", n) .. string.rep("░", BAR_W - n)
 end
 
--- [>] Velocidade  ██████░░░░  5   (arraste ou clique)
+-- [>] Velocidade      ████████░░░░░░░░░░░░   5   (arraste ou clique na barra)
 function Tab:Slider(name, min, max, default, cb)
 	local T = self.lib.Theme
 	local value = default or min
@@ -263,25 +263,48 @@ function Tab:Slider(name, min, max, default, cb)
 		Active = true,
 	}, self.page), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(holder, T.Dim), "Color", "Dim")
-	local lbl = U.paint(U.make("TextLabel", {
+	U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.fromOffset(10, 0),
-		Size = UDim2.new(1, -20, 1, 0),
+		Size = UDim2.new(1, -270, 1, 0),
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "[>] " .. name,
+	}, holder), "TextColor3", "Accent")
+	local bar = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -66, 0.5, 0),
+		Size = UDim2.fromOffset(BAR_W * 9, 22),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Text = "",
 	}, holder), "TextColor3", "Accent")
+	local val = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(46, 22),
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Text = "",
+	}, holder), "TextColor3", "Accent")
 
 	local function render()
-		lbl.Text = string.format("[>] %s  %s %g", name, tbar((value - min) / (max - min)), value)
+		bar.Text = tbar((value - min) / (max - min))
+		val.Text = string.format("%g", value)
 	end
 	render()
 
 	local sliding = false
 	local function set(input)
-		local rel = math.clamp((input.Position.X - holder.AbsolutePosition.X) / holder.AbsoluteSize.X, 0, 1)
+		local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
 		local nv = math.floor(min + (max - min) * rel + 0.5)
 		if nv ~= value then
 			value = nv
@@ -419,7 +442,7 @@ function Tab:Textbox(name, placeholder, cb)
 	end
 end
 
--- Progresso em quadradinhos: [>] Carregamento  ████░░░░  40%
+-- Progresso em quadradinhos: [>] Carregamento   ████░░░░  40%
 function Tab:Progress(name, initial)
 	local T = self.lib.Theme
 	local holder = U.paint(U.make("Frame", {
@@ -428,21 +451,44 @@ function Tab:Progress(name, initial)
 		BorderSizePixel = 0,
 	}, self.page), "BackgroundColor3", "Panel")
 	U.paint(U.stroke(holder, T.Dim), "Color", "Dim")
-	local lbl = U.paint(U.make("TextLabel", {
+	U.paint(U.make("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.fromOffset(10, 0),
-		Size = UDim2.new(1, -20, 1, 0),
+		Size = UDim2.new(1, -270, 1, 0),
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "[>] " .. name,
+	}, holder), "TextColor3", "Accent")
+	local bar = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -66, 0.5, 0),
+		Size = UDim2.fromOffset(BAR_W * 9, 22),
 		Font = T.Font,
 		TextSize = 15,
 		TextColor3 = T.Accent,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Text = "",
 	}, holder), "TextColor3", "Accent")
+	local pct = U.paint(U.make("TextLabel", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(46, 22),
+		Font = T.Font,
+		TextSize = 15,
+		TextColor3 = T.Accent,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Text = "",
+	}, holder), "TextColor3", "Accent")
 
 	local value = 0
 	local function set(v)
 		value = math.clamp(v, 0, 1)
-		lbl.Text = string.format("[>] %s  %s %d%%", name, tbar(value), math.floor(value * 100 + 0.5))
+		bar.Text = tbar(value)
+		pct.Text = string.format("%d%%", math.floor(value * 100 + 0.5))
 	end
 	set(initial or 0)
 	return set
@@ -530,6 +576,7 @@ function Tab:Keybind(name, default, onPress)
 		refresh()
 	end)
 	table.insert(self.lib._conns, UIS.InputBegan:Connect(function(input, gp)
+if listening and input.KeyCode == Enum.KeyCode.Escape then listening = false; val.Text = "[ " .. key.Name .. " ]"; refresh(); return end
 		if listening and input.UserInputType == Enum.UserInputType.Keyboard then
 			listening = false
 			key = input.KeyCode
