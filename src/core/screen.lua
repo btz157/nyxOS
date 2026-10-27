@@ -5,8 +5,8 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
--- Três camadas de tela inteira:
--- Back: chuva Matrix e escurecimento (atrás de tudo)
+-- Camadas de tela inteira:
+-- Back: chuva Matrix (atrás de tudo)
 -- Main: janela, bolinha e notificações
 -- Top: scanline, varredura, flash, partículas e boot (por cima de tudo)
 local S = {}
@@ -49,32 +49,45 @@ function S.new(theme)
 	U.make("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.12,
+		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 	}, self.Back)
-	self.Cols = E.rain(self.Back, self._vw, self._vh, theme)
+	self.Streams = E.rain(self.Back, self._vw, self._vh, theme)
 
 	table.insert(self._conns, RunService.RenderStepped:Connect(function(dt)
 		self.Boost = math.max(1, self.Boost - dt * 1.2)
-		E.step(self.Cols, self._vh, dt, self.Boost)
+		E.step(self.Streams, self._vh, dt, self.Boost)
 	end))
 
-	-- Scanline contínua da tela inteira
-	local scan = U.make("Frame", {
+	self._scan = U.make("Frame", {
 		Size = UDim2.new(1, 0, 0, 2),
 		BackgroundColor3 = theme.Accent,
 		BackgroundTransparency = 0.7,
 		BorderSizePixel = 0,
 		ZIndex = 5,
 	}, self.Top)
-	TweenService:Create(scan, TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1), {
+	TweenService:Create(self._scan, TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1), {
 		Position = UDim2.fromScale(0, 1),
 	}):Play()
 
 	return self
 end
 
--- Acelera a chuva por um tempo (ex.: clique)
+-- Liga/desliga chuva e scanline: desliga a camada e também cada coluna
+function S:setVisible(v)
+	self.Back.Enabled = v
+	self.Top.Enabled = v
+	for _, s in ipairs(self.Streams) do
+		s.label.Visible = v
+	end
+end
+
+function S:setTheme(T)
+	self.Theme = T
+	E.recolor(self.Streams, T.Accent)
+	self._scan.BackgroundColor3 = T.Accent
+end
+
 function S:boost(m)
 	self.Boost = math.max(self.Boost, m or 3)
 end

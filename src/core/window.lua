@@ -613,6 +613,12 @@ function Window:Minimize()
 		Position = UDim2.fromOffset(BUBBLE_CENTER[1], BUBBLE_CENTER[2]),
 	})
 	t:Play()
+	-- Desliga a chuva logo após o encolhimento (não depende só do Completed)
+	task.delay(0.4, function()
+		if not self.Visible then
+			self.Screen:setVisible(false)
+		end
+	end)
 	t.Completed:Connect(function()
 		if self.Visible then
 			return

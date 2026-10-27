@@ -12,53 +12,77 @@ function E.scramble(c)
 	c.lbl.Text = table.concat(rows, "\n")
 end
 
--- Chuva Matrix em duas camadas: fundo (pequena, lenta, esmaecida) e frente (maior, rápida, viva)
+-- Chuva Matrix: cada coluna é um texto com gradiente de brilho (RichText).
+-- Topo escuro, meio verde neon, cabeça branca. Duas camadas: fundo (fraco) e frente (forte).
 local LAYERS = {
-	{ col = 12, lh = 11, size = 10, spd = { 35, 95 }, alpha = 0.7, len = { 8, 22 }, density = 0.9 },
-	{ col = 18, lh = 16, size = 15, spd = { 110, 240 }, alpha = 0.3, len = { 6, 14 }, density = 0.45 },
+	{ size = 10, lh = 12, col = 12, spd = { 35, 95 }, len = { 8, 22 }, density = 0.9, transp = 0.45 },
+	{ size = 15, lh = 17, col = 18, spd = { 110, 240 }, len = { 6, 14 }, density = 0.45, transp = 0.05 },
 }
-local HEAD = Color3.fromRGB(235, 255, 235)
 
-local function glyphs(n)
-	local t = {}
-	for i = 1, n do
-		t[i] = U.glyph()
-	end
-	return table.concat(t, "\n")
+local function esc(s)
+	return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
 end
 
-local function newStream(parent, x, h, theme, L, anywhere)
-	local len = math.random(L.len[1], L.len[2])
+local function hex(c)
+	return string.format("#%02X%02X%02X", math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5))
+end
+
+-- Cor de cada linha: u vai de 0 (topo) a 1 (cabeça)
+local function shade(accent, u)
+	if u > 0.9 then
+		return "#EBFFEB"
+	end
+	local k = 0.1 + 0.9 * u * u
+	return hex(Color3.new(accent.R * k, accent.G * k, accent.B * k))
+end
+
+local function paintColors(s, accent)
+	for i = 1, s.len do
+		s.colors[i] = shade(accent, i / s.len)
+	end
+end
+
+local function makeText(s)
+	local rows = {}
+	for i = 1, s.len do
+		rows[i] = string.format('<font color="%s">%s</font>', s.colors[i], esc(s.glyphs[i]))
+	end
+	return table.concat(rows, "\n")
+end
+
+local function regen(s)
+	s.len = math.random(s.L.len[1], s.L.len[2])
+	s.glyphs = {}
+	for i = 1, s.len do
+		s.glyphs[i] = U.glyph()
+	end
+	s.colors = {}
+	paintColors(s, s.accent)
+	s.label.Size = UDim2.fromOffset(s.L.col, s.len * s.L.lh)
+	s.label.Text = makeText(s)
+end
+
+local function newStream(parent, x, h, theme, L)
 	local s = {
 		x = x,
-		len = len,
-		col = L.col,
-		lh = L.lh,
 		L = L,
-		y = anywhere and math.random(0, math.floor(h)) or -math.random(0, math.floor(h / 3)),
+		accent = theme.Accent,
+		y = math.random(0, math.floor(h)),
 		spd = math.random(L.spd[1], L.spd[2]),
 	}
-	s.trail = U.make("TextLabel", {
+	s.label = U.make("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(L.col, len * L.lh),
+		Size = UDim2.fromOffset(L.col, L.len[1] * L.lh),
 		Font = theme.Font,
 		TextSize = L.size,
-		TextColor3 = theme.Accent,
-		TextTransparency = L.alpha,
+		TextColor3 = Color3.new(1, 1, 1),
+		TextTransparency = L.transp,
+		RichText = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
-		Text = glyphs(len),
+		Text = "",
 	}, parent)
-	s.head = U.make("TextLabel", {
-		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(L.col, L.lh),
-		Font = theme.Font,
-		TextSize = L.size,
-		TextColor3 = HEAD,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
-		Text = U.glyph(),
-	}, parent)
+	regen(s)
 	return s
 end
 
@@ -67,7 +91,7 @@ function E.rain(parent, w, h, theme)
 	for _, L in ipairs(LAYERS) do
 		for x = 0, math.ceil(w / L.col) do
 			if math.random() < L.density then
-				streams[#streams + 1] = newStream(parent, x * L.col, h, theme, L, true)
+				streams[#streams + 1] = newStream(parent, x * L.col, h, theme, L)
 			end
 		end
 	end
@@ -78,21 +102,26 @@ function E.step(streams, h, dt, mul)
 	mul = mul or 1
 	for _, s in ipairs(streams) do
 		s.y += s.spd * mul * dt
-		if s.y - s.len * s.lh > h then
+		if s.y - s.len * s.L.lh > h then
 			s.y = -math.random(0, math.floor(h / 3))
-			s.len = math.random(s.L.len[1], s.L.len[2])
 			s.spd = math.random(s.L.spd[1], s.L.spd[2])
-			s.trail.Size = UDim2.fromOffset(s.col, s.len * s.lh)
-			s.trail.Text = glyphs(s.len)
+			regen(s)
 		end
-		if math.random() < 0.03 then
-			s.trail.Text = glyphs(s.len)
+		if math.random() < 0.08 then
+			s.glyphs[math.random(s.len)] = U.glyph()
+			s.label.Text = makeText(s)
 		end
-		if math.random() < 0.3 then
-			s.head.Text = U.glyph()
-		end
-		s.trail.Position = UDim2.fromOffset(s.x, s.y - s.len * s.lh)
-		s.head.Position = UDim2.fromOffset(s.x, s.y)
+		s.label.Position = UDim2.fromOffset(s.x, s.y - s.len * s.L.lh)
+	end
+end
+
+-- Troca a cor da chuva (usado pelo SetTheme)
+function E.recolor(streams, accent)
+	for _, s in ipairs(streams) do
+		s.accent = accent
+		s.colors = {}
+		paintColors(s, accent)
+		s.label.Text = makeText(s)
 	end
 end
 
