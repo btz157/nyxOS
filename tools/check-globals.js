@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { parse, analyzeScopes } = require('luau-parser');
-const OK = new Set(['game','workspace','script','task','Enum','Instance','UDim2','UDim','Vector2','Vector3','Color3','TweenInfo','Players','math','string','table','os','pcall','xpcall','print','warn','error','ipairs','pairs','tostring','tonumber','type','typeof','select','assert','next','rawget','rawset','setmetatable','getmetatable','unpack','utf8','coroutine','require','ColorSequence','ColorSequenceKeypoint','NumberSequence','NumberRange','Rect','getgenv','gethui','loadstring','syn','_G','shared','tick','time','wait','readfile','writefile','isfile','makefolder','isfolder','bit32','buffer','vector','Random','math']);
+const OK = new Set(['load','game','workspace','script','task','Enum','Instance','UDim2','UDim','Vector2','Vector3','Color3','TweenInfo','Players','math','string','table','os','pcall','xpcall','print','warn','error','ipairs','pairs','tostring','tonumber','type','typeof','select','assert','next','rawget','rawset','setmetatable','getmetatable','unpack','utf8','coroutine','require','ColorSequence','ColorSequenceKeypoint','NumberSequence','NumberRange','Rect','getgenv','gethui','loadstring','syn','_G','shared','tick','time','wait','readfile','writefile','isfile','makefolder','isfolder','bit32','buffer','vector','Random','math']);
 function walk(d, out) {
   for (const f of fs.readdirSync(d)) {
     const p = path.join(d, f);
